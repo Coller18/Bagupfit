@@ -1,0 +1,22 @@
+# Python virtual environments
+/venv/
+**/venv/
+**/.venv/
+**/env/
+
+# Environment files (keep safe templates)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Generated dependencies and build output
+**/node_modules/
+**/dist/
+**/__pycache__/
+**/*.py[cod]
+**/staticfiles/
+
+# Local databases and editor files
+**/*.sqlite3
+.DS_Store
+Thumbs.db

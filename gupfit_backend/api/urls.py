@@ -1,0 +1,30 @@
+from django.urls import path
+from .views import (
+    AdminAvailabilityListCreateView,
+    AdminBarberDetailView,
+    AdminBarberListCreateView,
+    AdminBookingListView,
+    AdminBookingReceiptView,
+    AdminBookingReviewView,
+    BarberListView,
+    CustomerBookingCreateView,
+    CustomerBookingHistoryView,
+    PublicAvailabilityListView,
+    SubAdminLoginView,
+    SubAdminLogoutView,
+)
+
+urlpatterns = [
+    path('barbers/', BarberListView.as_view(), name='barber-list'),
+    path('auth/login/', SubAdminLoginView.as_view(), name='sub-admin-login'),
+    path('auth/logout/', SubAdminLogoutView.as_view(), name='sub-admin-logout'),
+    path('admin/barbers/', AdminBarberListCreateView.as_view(), name='admin-barber-list'),
+    path('admin/barbers/<int:pk>/', AdminBarberDetailView.as_view(), name='admin-barber-detail'),
+    path('admin/availability/', AdminAvailabilityListCreateView.as_view(), name='admin-availability-list'),
+    path('admin/bookings/', AdminBookingListView.as_view(), name='admin-booking-list'),
+    path('admin/bookings/<int:pk>/', AdminBookingReviewView.as_view(), name='admin-booking-review'),
+    path('admin/bookings/<int:pk>/receipt/', AdminBookingReceiptView.as_view(), name='admin-booking-receipt'),
+    path('availability/', PublicAvailabilityListView.as_view(), name='public-availability-list'),
+    path('bookings/', CustomerBookingCreateView.as_view(), name='customer-booking-create'),
+    path('my/bookings/', CustomerBookingHistoryView.as_view(), name='customer-booking-history'),
+]
