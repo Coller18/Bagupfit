@@ -7,6 +7,7 @@ from .views import (
     AdminBookingReceiptView,
     AdminBookingReviewView,
     BarberListView,
+    BarberPhotoView,
     CustomerBookingCreateView,
     CustomerBookingHistoryView,
     PublicAvailabilityListView,
@@ -16,6 +17,7 @@ from .views import (
 
 urlpatterns = [
     path('barbers/', BarberListView.as_view(), name='barber-list'),
+    path('barbers/<int:pk>/photo/', BarberPhotoView.as_view(), name='barber-photo'),
     path('auth/login/', SubAdminLoginView.as_view(), name='sub-admin-login'),
     path('auth/logout/', SubAdminLogoutView.as_view(), name='sub-admin-logout'),
     path('admin/barbers/', AdminBarberListCreateView.as_view(), name='admin-barber-list'),

@@ -1,8 +1,9 @@
 from django.contrib.auth import authenticate
-from django.http import FileResponse
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Q
+import mimetypes
 from pathlib import Path
 from django.utils import timezone
 from rest_framework import generics, status
@@ -62,6 +63,22 @@ class BarberListView(generics.ListAPIView):
     queryset = Barber.objects.filter(is_active=True)
     serializer_class = BarberSerializer
     permission_classes = [AllowAny]
+
+
+class BarberPhotoView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        barber = get_object_or_404(Barber, pk=pk)
+        if not barber.photo:
+            raise Http404
+        try:
+            image_file = barber.photo.open('rb')
+        except (FileNotFoundError, OSError):
+            raise Http404
+        content_type = mimetypes.guess_type(barber.photo.name)[0] or 'application/octet-stream'
+        return FileResponse(image_file, content_type=content_type)
 
 
 class AdminBarberListCreateView(generics.ListCreateAPIView):

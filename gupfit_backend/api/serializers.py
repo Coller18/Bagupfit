@@ -1,5 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 from pathlib import Path
 from .models import Availability, Barber, Booking
 
@@ -15,9 +16,8 @@ class BarberSerializer(serializers.ModelSerializer):
 
     def get_photo_url(self, barber):
         if barber.photo:
-            url = barber.photo.url
             request = self.context.get('request')
-            return request.build_absolute_uri(url) if request else url
+            return reverse('barber-photo', kwargs={'pk': barber.pk}, request=request)
         return barber.photo_url
 
     def validate_photo(self, photo):
