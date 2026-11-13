@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+const defaultApiBaseUrl = import.meta.env.DEV
+  ? 'http://127.0.0.1:8000'
+  : 'https://bagupfit.onrender.com'
+const configuredApiIsLoopback = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::|\/|$)/i.test(configuredApiBaseUrl || '')
+const API_BASE_URL = (
+  configuredApiBaseUrl && !(import.meta.env.PROD && configuredApiIsLoopback)
+    ? configuredApiBaseUrl
+    : defaultApiBaseUrl
+).replace(/\/$/, '')
 const TOKEN_KEY = 'gupfit-subadmin-token'
 const USER_KEY = 'gupfit-subadmin-username'
 
