@@ -5,7 +5,7 @@ import './App.css'
 
 const requestedNext = new URLSearchParams(window.location.search).get('next')
 const nextPath = ['/booking', '/my-bookings'].includes(requestedNext) ? requestedNext : '/booking'
-
+//commenting only
 export default function AccountPage() {
   const [authMode, setAuthMode] = useState(() => new URLSearchParams(window.location.search).get('mode') === 'login' ? 'signin' : 'signup')
   const [authForm, setAuthForm] = useState({ full_name: '', phone: '', email: '', password: '' })
