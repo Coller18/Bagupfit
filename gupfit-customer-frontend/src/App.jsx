@@ -96,7 +96,7 @@ export default function App() {
   const activeBarber = availableBarbers[activeBarberIndex] || availableBarbers[0]
 
   return (
-    <main>
+    <main className="customer-home">
       <header className="site-header">
         <nav className="site-nav" aria-label="Main navigation">
           <a href="#team">Our team</a>

@@ -395,6 +395,12 @@ body,
 .site-header { position: absolute; z-index: 5; top: 0; left: 0; right: 0; background: transparent; }
 .booking-page .site-header { position: relative; }
 .site-header .site-nav { margin-left: auto; }
+.customer-home { overflow-x: clip; overflow-y: visible; }
+.home-scroll-stack { position: relative; }
+.home-stack-card { position: sticky; top: 0; transform-origin: top center; }
+.home-stack-card:nth-child(1) { z-index: 1; }
+.home-stack-card:nth-child(2) { z-index: 2; }
+.home-stack-card:nth-child(3) { z-index: 3; }
 .site-logo { width: 132px; height: 76px; display: block; object-fit: contain; object-position: left center; }
 .site-logo-footer { width: 105px; height: 60px; }
 .hero-brand { display: block; margin-bottom: clamp(6px, 1vw, 16px); }
@@ -441,6 +447,7 @@ body,
 @media (prefers-reduced-motion: reduce) {
   .hero-video { display: none; }
   .hero { background: #111; }
+  .home-stack-card { position: relative; top: auto; transform: none !important; filter: none !important; }
 }
 
 .booking-page {
