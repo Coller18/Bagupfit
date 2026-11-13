@@ -1,9 +1,10 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { API_BASE_URL, apiRequest } from './api.js'
 import brandLogo from './logo-white.png'
 import heroVideo from './hero.mp4'
 import barberFallback from './barber-placeholder.svg'
 import CircularCarousel from './CircularCarousel.jsx'
+import ScrollStack, { ScrollStackItem } from './ScrollStack.jsx'
 import SiteFooter from './SiteFooter.jsx'
 import { supabase } from './supabase.js'
 import './App.css'
@@ -17,7 +18,6 @@ export default function App() {
   const [customerSession, setCustomerSession] = useState(null)
   const [authResolved, setAuthResolved] = useState(false)
   const [activeBarberIndex, setActiveBarberIndex] = useState(0)
-  const homeStackRef = useRef(null)
 
   const loadBarbers = useCallback(async () => {
     setLoading(true)
@@ -49,43 +49,6 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  useEffect(() => {
-    const stack = homeStackRef.current
-    if (!stack || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
-
-    const cards = Array.from(stack.querySelectorAll('[data-stack-card]'))
-    let frame = 0
-    const updateStack = () => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const viewportHeight = window.innerHeight || 1
-        cards.forEach((card, index) => {
-          const nextCard = cards[index + 1]
-          if (!nextCard) return
-          const nextTop = nextCard.getBoundingClientRect().top
-          const progress = Math.max(0, Math.min(1, (viewportHeight - nextTop) / viewportHeight))
-          const scale = 1 - progress * 0.045
-          const lift = progress * 12
-          card.style.transform = `translate3d(0, ${-lift}px, 0) scale(${scale})`
-          card.style.filter = `brightness(${1 - progress * 0.28})`
-        })
-      })
-    }
-
-    updateStack()
-    window.addEventListener('scroll', updateStack, { passive: true })
-    window.addEventListener('resize', updateStack)
-    return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('scroll', updateStack)
-      window.removeEventListener('resize', updateStack)
-      cards.forEach((card) => {
-        card.style.removeProperty('transform')
-        card.style.removeProperty('filter')
-      })
-    }
-  }, [])
-
   const availableBarbers = barbers.filter((barber) => barber.is_active)
   const teamItems = availableBarbers.map((barber) => ({
     src: barber.photo_url || barberFallback,
@@ -97,18 +60,28 @@ export default function App() {
 
   return (
     <main className="customer-home">
-      <header className="site-header">
-        <nav className="site-nav" aria-label="Main navigation">
-          <a href="#team">Our team</a>
-          {authResolved && customerSession ? <>
-            <a href="/my-bookings">My bookings</a>
-            <a className="nav-cta" href="/booking">Book a time</a>
-          </> : <a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Login</a>}
-        </nav>
-      </header>
-
-      <div className="home-scroll-stack" ref={homeStackRef}>
-      <section className="hero home-stack-card" id="home" data-stack-card>
+      <ScrollStack
+        className="home-scroll-stack"
+        useWindowScroll
+        itemDistance={80}
+        itemStackDistance={24}
+        stackPosition={0}
+        itemScale={0.04}
+        baseScale={0.92}
+        dimAmount={0.16}
+        holdDistance={120}
+      >
+      <ScrollStackItem itemClassName="home-stack-panel home-stack-panel--hero">
+      <section className="hero" id="home">
+        <header className="site-header">
+          <nav className="site-nav" aria-label="Main navigation">
+            <a href="#team">Our team</a>
+            {authResolved && customerSession ? <>
+              <a href="/my-bookings">My bookings</a>
+              <a className="nav-cta" href="/booking">Book a time</a>
+            </> : <a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Login</a>}
+          </nav>
+        </header>
         <video className="hero-video" autoPlay muted loop playsInline aria-hidden="true" tabIndex={-1}>
           <source src={heroVideo} type="video/mp4" />
         </video>
@@ -154,8 +127,10 @@ export default function App() {
           </div>
         </div>
       </section>
+      </ScrollStackItem>
 
-      <section className="team-section content-section home-stack-card" id="team" data-stack-card>
+      <ScrollStackItem itemClassName="home-stack-panel home-stack-panel--team">
+      <section className="team-section content-section" id="team">
         <div className="section-heading">
           <div><p className="eyebrow">THE GUPFIT CREW</p><h2>Meet the team.</h2></div>
           <p className="section-index">01 <span>/</span> PEOPLE BEHIND THE CHAIR</p>
@@ -202,8 +177,10 @@ export default function App() {
           </div>}
         </div>}
       </section>
+      </ScrollStackItem>
 
-      <section className="location-section home-stack-card" id="location" data-stack-card aria-labelledby="location-title">
+      <ScrollStackItem itemClassName="home-stack-panel home-stack-panel--location">
+      <section className="location-section" id="location" aria-labelledby="location-title">
         <div className="location-panel">
           <p className="eyebrow">GUPFIT BARBERSHOP</p>
           <h2 id="location-title">Find us.</h2>
@@ -214,7 +191,8 @@ export default function App() {
           <iframe title="Map showing the Gupfit barbershop location" src="https://maps.google.com/maps?q=14.487657676218227%2C120.90293397420717&z=17&output=embed" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
         </div>
       </section>
-      </div>
+      </ScrollStackItem>
+      </ScrollStack>
 
       <SiteFooter />
     </main>
