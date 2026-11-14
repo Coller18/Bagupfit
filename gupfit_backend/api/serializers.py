@@ -5,6 +5,8 @@ from pathlib import Path
 from .models import Availability, Barber, Booking, HaircutWork
 from .public_storage import upload_public_image
 
+MAX_FEATURED_HAIRCUTS = 3
+
 
 class BarberSerializer(serializers.ModelSerializer):
     photo = serializers.FileField(required=False, write_only=True)
@@ -75,21 +77,29 @@ class HaircutWorkSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Upload a JPG, PNG, or WebP image.')
         return image
 
+    def validate(self, attrs):
+        is_featured = attrs.get('is_featured', getattr(self.instance, 'is_featured', False))
+        if is_featured:
+            featured_works = HaircutWork.objects.filter(is_featured=True)
+            if self.instance:
+                featured_works = featured_works.exclude(pk=self.instance.pk)
+            if featured_works.count() >= MAX_FEATURED_HAIRCUTS:
+                raise serializers.ValidationError({
+                    'is_featured': 'Home can show up to 3 featured haircuts. Unfeature one before selecting another.'
+                })
+        return attrs
+
     def create(self, validated_data):
         image = validated_data.pop('image', None)
         if not image:
             raise serializers.ValidationError({'image': 'Choose a haircut photo to upload.'})
         validated_data['image_url'] = upload_public_image(image, 'haircut-works')
-        if validated_data.get('is_featured'):
-            HaircutWork.objects.filter(is_featured=True).update(is_featured=False)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         image = validated_data.pop('image', None)
         if image:
             validated_data['image_url'] = upload_public_image(image, 'haircut-works')
-        if validated_data.get('is_featured') is True:
-            HaircutWork.objects.exclude(pk=instance.pk).filter(is_featured=True).update(is_featured=False)
         return super().update(instance, validated_data)
 
 

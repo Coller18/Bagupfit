@@ -413,6 +413,7 @@ export default function App() {
       .some((value) => value.toLowerCase().includes(search))
     return matchesSearch && (bookingStatus === 'all' || booking.status === bookingStatus)
   })
+  const featuredWorkCount = works.filter((work) => work.is_featured).length
 
   if (!token) {
     return (
@@ -570,7 +571,7 @@ export default function App() {
 
           {activePage === 'works' && (
             <>
-              <section className="dashboard-intro"><p className="eyebrow">PORTFOLIO</p><h1>Our work</h1><p className="intro-copy">All published photos appear on the Works page. Choose one featured haircut for Home; featuring another replaces the current one.</p></section>
+              <section className="dashboard-intro"><p className="eyebrow">PORTFOLIO</p><h1>Our work</h1><p className="intro-copy">All published photos appear on the Works page. Choose up to 3 featured haircuts for Home ({featuredWorkCount}/3 selected).</p></section>
               <section className="panel work-form-panel">
                 <div className="panel-heading"><div><p className="eyebrow">NEW HAIRCUT</p><h2>Add to the gallery</h2></div></div>
                 <form className="form-stack work-form" onSubmit={submitWork}>
@@ -580,7 +581,8 @@ export default function App() {
                     {workPreview ? <img className="work-upload-preview" src={workPreview} alt="Haircut preview" /> : <span className="work-upload-placeholder">Photo preview</span>}
                     <label className="work-file-control">Haircut photo<input accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required type="file" onChange={selectWorkImage} /><small>JPG, PNG, or WebP. Maximum 5 MB.</small></label>
                   </div>
-                  <label className="work-featured-toggle"><input checked={workForm.is_featured} onChange={(event) => setWorkForm({ ...workForm, is_featured: event.target.checked })} type="checkbox" /> Make this the featured haircut on Home</label>
+                  <label className="work-featured-toggle"><input checked={workForm.is_featured} disabled={featuredWorkCount >= 3 && !workForm.is_featured} onChange={(event) => setWorkForm({ ...workForm, is_featured: event.target.checked })} type="checkbox" /> Feature this haircut on Home</label>
+                  {featuredWorkCount >= 3 && !workForm.is_featured && <small className="work-featured-limit">All 3 Home feature slots are full. Unfeature one below to add another.</small>}
                   <button className="button button-primary" disabled={busy} type="submit">{busy ? 'Uploading...' : 'Add to gallery'}</button>
                 </form>
               </section>
@@ -589,7 +591,7 @@ export default function App() {
                 {works.length === 0 ? <p className="empty-note">No haircut photos have been added yet.</p> : <div className="admin-work-grid">{works.map((work) => <article className="admin-work-card" key={work.id}>
                   <img src={work.image_url} alt={work.title || 'Haircut work'} />
                   <div><strong>{work.title || 'Untitled haircut'}</strong>{work.description && <small>{work.description}</small>}{work.is_featured && <span className="admin-work-featured">Featured on Home</span>}</div>
-                  <div className="admin-work-actions"><button className="button button-secondary" disabled={busy} onClick={() => toggleWorkFeatured(work)} type="button">{work.is_featured ? 'Unfeature' : 'Feature on Home'}</button><button className="button button-secondary" disabled={busy} onClick={() => deleteWork(work)} type="button">Remove</button></div>
+                  <div className="admin-work-actions"><button className="button button-secondary" disabled={busy || (!work.is_featured && featuredWorkCount >= 3)} onClick={() => toggleWorkFeatured(work)} type="button">{work.is_featured ? 'Unfeature' : featuredWorkCount >= 3 ? '3 featured' : 'Feature on Home'}</button><button className="button button-secondary" disabled={busy} onClick={() => deleteWork(work)} type="button">Remove</button></div>
                 </article>)}</div>}
               </section>
             </>

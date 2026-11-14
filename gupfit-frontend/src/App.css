@@ -234,6 +234,7 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px
 .work-file-control small { color: #999; font-size: 11px; }
 .work-featured-toggle { display: flex !important; align-items: center; flex-direction: row !important; gap: 9px !important; }
 .work-featured-toggle input { width: 16px; height: 16px; }
+.work-featured-limit { color: #d8c18d; font-size: 11px; }
 .admin-work-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
 .admin-work-card { min-width: 0; overflow: hidden; border: 1px solid #303030; background: #101010; }
 .admin-work-card > img { width: 100%; aspect-ratio: 4 / 5; display: block; object-fit: cover; }
