@@ -81,6 +81,11 @@
   width: 100%;
 }
 
+.home-stack-panel--work .work-gallery {
+  grid-template-columns: minmax(0, min(520px, 100%));
+  justify-content: center;
+}
+
 .home-stack-panel--location > .location-section {
   width: 100%;
 }

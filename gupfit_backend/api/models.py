@@ -23,6 +23,7 @@ class HaircutWork(models.Model):
     description = models.TextField(blank=True)
     image_url = models.URLField()
     is_published = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
     sort_order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 

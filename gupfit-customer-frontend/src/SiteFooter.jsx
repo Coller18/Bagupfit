@@ -25,6 +25,11 @@ export default function SiteFooter() {
           <p>Make time for yourself.</p>
         </div>
         <div className="site-footer-column">
+          <h2>Explore</h2>
+          <a href="/works">All haircuts</a>
+          <a href="/">Home</a>
+        </div>
+        <div className="site-footer-column">
           <h2>Follow us</h2>
           <SocialItem label="Facebook" href={shop.facebookUrl} />
           <SocialItem label="Instagram" href={shop.instagramUrl} />

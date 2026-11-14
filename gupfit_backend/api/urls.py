@@ -13,6 +13,7 @@ from .views import (
     CustomerBookingCreateView,
     CustomerBookingHistoryView,
     PublicAvailabilityListView,
+    PublicFeaturedHaircutWorkListView,
     PublicHaircutWorkListView,
     SubAdminLoginView,
     SubAdminLogoutView,
@@ -20,6 +21,7 @@ from .views import (
 
 urlpatterns = [
     path('barbers/', BarberListView.as_view(), name='barber-list'),
+    path('works/featured/', PublicFeaturedHaircutWorkListView.as_view(), name='public-featured-haircut-work-list'),
     path('works/', PublicHaircutWorkListView.as_view(), name='public-haircut-work-list'),
     path('barbers/<int:pk>/photo/', BarberPhotoView.as_view(), name='barber-photo'),
     path('auth/login/', SubAdminLoginView.as_view(), name='sub-admin-login'),

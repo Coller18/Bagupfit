@@ -82,7 +82,7 @@ export default function MyBookingsPage() {
     <main className="booking-page my-bookings-page">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Gupfit home"><img className="site-logo" src={brandLogo} alt="Gupfit" /></a>
-        <nav className="site-nav" aria-label="Main navigation"><a href="/#work">Our work</a>{session && <a href="/my-bookings" aria-current="page">My bookings</a>}<a className="nav-cta" href="/booking">Book a time</a></nav>
+        <nav className="site-nav" aria-label="Main navigation"><a href="/works">All haircuts</a>{session && <a href="/my-bookings" aria-current="page">My bookings</a>}<a className="nav-cta" href="/booking">Book a time</a></nav>
       </header>
 
       <section className="booking-page-heading">

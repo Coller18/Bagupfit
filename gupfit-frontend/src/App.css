@@ -232,13 +232,17 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px
 .work-file-control { display: flex; flex-direction: column; gap: 9px; }
 .work-file-control input { width: 100%; color: #ddd; }
 .work-file-control small { color: #999; font-size: 11px; }
+.work-featured-toggle { display: flex !important; align-items: center; flex-direction: row !important; gap: 9px !important; }
+.work-featured-toggle input { width: 16px; height: 16px; }
 .admin-work-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
 .admin-work-card { min-width: 0; overflow: hidden; border: 1px solid #303030; background: #101010; }
 .admin-work-card > img { width: 100%; aspect-ratio: 4 / 5; display: block; object-fit: cover; }
 .admin-work-card > div { display: flex; flex-direction: column; gap: 5px; padding: 12px; }
 .admin-work-card strong { color: #f4f4f4; font-size: 13px; }
 .admin-work-card small { color: #aaa; font-size: 11px; line-height: 1.5; }
-.admin-work-card > button { margin: 0 12px 12px; }
+.admin-work-featured { color: #d8c18d; font-size: 10px; }
+.admin-work-actions { align-items: stretch; flex-direction: row !important; gap: 8px !important; }
+.admin-work-actions .button { min-height: 34px; flex: 1; padding: 0 8px; font-size: 10px; }
 
 @media (max-width: 1000px) {
   .dashboard-layout { grid-template-columns: 190px minmax(0, 1fr); gap: 20px; }

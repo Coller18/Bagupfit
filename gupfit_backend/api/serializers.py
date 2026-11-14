@@ -61,7 +61,7 @@ class HaircutWorkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = HaircutWork
-        fields = ['id', 'title', 'description', 'image', 'image_url', 'is_published', 'sort_order', 'created_at']
+        fields = ['id', 'title', 'description', 'image', 'image_url', 'is_published', 'is_featured', 'sort_order', 'created_at']
         read_only_fields = ['id', 'image_url', 'created_at']
 
     def validate_image(self, image):
@@ -80,12 +80,16 @@ class HaircutWorkSerializer(serializers.ModelSerializer):
         if not image:
             raise serializers.ValidationError({'image': 'Choose a haircut photo to upload.'})
         validated_data['image_url'] = upload_public_image(image, 'haircut-works')
+        if validated_data.get('is_featured'):
+            HaircutWork.objects.filter(is_featured=True).update(is_featured=False)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         image = validated_data.pop('image', None)
         if image:
             validated_data['image_url'] = upload_public_image(image, 'haircut-works')
+        if validated_data.get('is_featured') is True:
+            HaircutWork.objects.exclude(pk=instance.pk).filter(is_featured=True).update(is_featured=False)
         return super().update(instance, validated_data)
 
 

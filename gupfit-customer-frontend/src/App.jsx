@@ -20,7 +20,7 @@ export default function App() {
     setLoading(true)
     setError('')
     try {
-      setWorks(await apiRequest('/api/works/'))
+      setWorks(await apiRequest('/api/works/featured/'))
     } catch (requestError) {
       setError(requestError.message || `Could not connect to ${API_BASE_URL}.`)
     } finally {
@@ -63,7 +63,7 @@ export default function App() {
       <section className="hero" id="home">
         <header className="site-header">
           <nav className="site-nav" aria-label="Main navigation">
-            <a href="#work">Our work</a>
+            <a href="/works">All haircuts</a>
             {authResolved && customerSession ? <>
               <a href="/my-bookings">My bookings</a>
               <a className="nav-cta" href="/booking">Book a time</a>
@@ -120,15 +120,15 @@ export default function App() {
       <ScrollStackItem itemClassName="home-stack-panel home-stack-panel--work">
       <section className="team-section content-section work-section" id="work">
         <div className="section-heading">
-          <div><p className="eyebrow">GUPFIT CUTS</p><h2>Our work.</h2></div>
-          <p className="section-index">01 <span>/</span> HAIRCUTS BY GUPFIT</p>
+          <div><p className="eyebrow">GUPFIT CUTS</p><h2>Featured haircuts.</h2></div>
+          <a className="section-index featured-work-link" href="/works">VIEW ALL WORK <span aria-hidden="true">&#8599;</span></a>
         </div>
         {loading && <p className="info-panel">Loading haircut photos...</p>}
         {error && <div className="info-panel info-error" role="alert"><span>{error}</span><button className="text-button" onClick={loadWorks} type="button">Try again</button></div>}
-        {!loading && !error && works.length === 0 && <p className="info-panel">Haircut photos will appear here soon.</p>}
+        {!loading && !error && works.length === 0 && <p className="info-panel">Featured haircut photos will appear here soon.</p>}
         {!loading && !error && works.length > 0 && <div className="work-gallery">
           {works.map((work, index) => <article className="work-gallery-card" key={work.id}>
-            <img src={work.image_url} alt={work.title ? `${work.title} haircut` : `Gupfit haircut ${index + 1}`} loading="lazy" />
+            <img src={work.image_url} alt={work.title ? `${work.title} haircut` : `Gupfit haircut ${index + 1}`} loading="eager" decoding="async" />
             {(work.title || work.description) && <div className="work-gallery-copy">
               {work.title && <h3>{work.title}</h3>}
               {work.description && <p>{work.description}</p>}

@@ -38,7 +38,7 @@ function emptyBarberForm() {
 }
 
 function emptyWorkForm() {
-  return { title: '', description: '', image: null }
+  return { title: '', description: '', image: null, is_featured: false }
 }
 
 function BookingTable({ bookings, emptyMessage, onViewReceipt, onReviewBooking, reviewingBookingId }) {
@@ -268,9 +268,29 @@ export default function App() {
       payload.append('image', workForm.image)
       payload.append('sort_order', String(works.length))
       payload.append('is_published', 'true')
+      payload.append('is_featured', String(workForm.is_featured))
       await apiRequest('/api/admin/works/', { method: 'POST', token, body: payload })
       setWorkForm(emptyWorkForm())
-      setNotice('Haircut added to your work gallery.')
+      setNotice(workForm.is_featured ? 'Haircut added to the gallery and featured on Home.' : 'Haircut added to the full work gallery.')
+      await loadDashboard(token)
+    } catch (error) {
+      setPageError(error.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function toggleWorkFeatured(work) {
+    setBusy(true)
+    setPageError('')
+    setNotice('')
+    try {
+      await apiRequest(`/api/admin/works/${work.id}/`, {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify({ is_featured: !work.is_featured }),
+      })
+      setNotice(work.is_featured ? 'Haircut removed from Home features.' : 'Haircut featured on Home.')
       await loadDashboard(token)
     } catch (error) {
       setPageError(error.message)
@@ -550,7 +570,7 @@ export default function App() {
 
           {activePage === 'works' && (
             <>
-              <section className="dashboard-intro"><p className="eyebrow">PORTFOLIO</p><h1>Our work</h1><p className="intro-copy">Upload haircut photos to showcase on the customer homepage.</p></section>
+              <section className="dashboard-intro"><p className="eyebrow">PORTFOLIO</p><h1>Our work</h1><p className="intro-copy">All published photos appear on the Works page. Choose one featured haircut for Home; featuring another replaces the current one.</p></section>
               <section className="panel work-form-panel">
                 <div className="panel-heading"><div><p className="eyebrow">NEW HAIRCUT</p><h2>Add to the gallery</h2></div></div>
                 <form className="form-stack work-form" onSubmit={submitWork}>
@@ -560,6 +580,7 @@ export default function App() {
                     {workPreview ? <img className="work-upload-preview" src={workPreview} alt="Haircut preview" /> : <span className="work-upload-placeholder">Photo preview</span>}
                     <label className="work-file-control">Haircut photo<input accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required type="file" onChange={selectWorkImage} /><small>JPG, PNG, or WebP. Maximum 5 MB.</small></label>
                   </div>
+                  <label className="work-featured-toggle"><input checked={workForm.is_featured} onChange={(event) => setWorkForm({ ...workForm, is_featured: event.target.checked })} type="checkbox" /> Make this the featured haircut on Home</label>
                   <button className="button button-primary" disabled={busy} type="submit">{busy ? 'Uploading...' : 'Add to gallery'}</button>
                 </form>
               </section>
@@ -567,8 +588,8 @@ export default function App() {
                 <div className="panel-heading"><div><p className="eyebrow">PUBLIC GALLERY</p><h2>Haircut photos</h2></div><span className="count-pill">{works.length}</span></div>
                 {works.length === 0 ? <p className="empty-note">No haircut photos have been added yet.</p> : <div className="admin-work-grid">{works.map((work) => <article className="admin-work-card" key={work.id}>
                   <img src={work.image_url} alt={work.title || 'Haircut work'} />
-                  <div><strong>{work.title || 'Untitled haircut'}</strong>{work.description && <small>{work.description}</small>}</div>
-                  <button className="button button-secondary" disabled={busy} onClick={() => deleteWork(work)} type="button">Remove</button>
+                  <div><strong>{work.title || 'Untitled haircut'}</strong>{work.description && <small>{work.description}</small>}{work.is_featured && <span className="admin-work-featured">Featured on Home</span>}</div>
+                  <div className="admin-work-actions"><button className="button button-secondary" disabled={busy} onClick={() => toggleWorkFeatured(work)} type="button">{work.is_featured ? 'Unfeature' : 'Feature on Home'}</button><button className="button button-secondary" disabled={busy} onClick={() => deleteWork(work)} type="button">Remove</button></div>
                 </article>)}</div>}
               </section>
             </>

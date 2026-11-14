@@ -72,6 +72,12 @@ class PublicHaircutWorkListView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
 
+class PublicFeaturedHaircutWorkListView(generics.ListAPIView):
+    queryset = HaircutWork.objects.filter(is_published=True, is_featured=True)
+    serializer_class = HaircutWorkSerializer
+    permission_classes = [AllowAny]
+
+
 class BarberPhotoView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
