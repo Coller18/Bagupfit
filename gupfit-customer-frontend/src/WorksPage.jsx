@@ -49,7 +49,7 @@ export default function WorksPage() {
             ariaLabel="Gupfit haircut gallery"
             preset="liquid"
             intro="rise"
-            cardHeight={0.5}
+            cardHeight={0.37}
             gap={12}
             squeeze={0.2}
             focusOnClick
