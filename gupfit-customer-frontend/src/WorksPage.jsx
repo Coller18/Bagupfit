@@ -28,10 +28,10 @@ export default function WorksPage() {
   return (
     <main className="works-page">
       <header className="site-header">
-        <a className="works-page-brand" href="/" aria-label="Gupfit home"><img src={brandLogo} alt="Gupfit" /></a>
+        <a className="brand" href="/" aria-label="Gupfit home"><img className="site-logo" src={brandLogo} alt="Gupfit" /></a>
         <nav className="site-nav" aria-label="Main navigation">
           <a href="/">Home</a>
-          <a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Book an appointment</a>
+          <a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Book a time</a>
         </nav>
       </header>
 
