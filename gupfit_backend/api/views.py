@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from .models import Availability, Barber, Booking
+from .models import Availability, Barber, Booking, HaircutWork
 from .authentication import SupabaseAuthAuthentication
 from .permissions import AdminModelPermissions, IsSubAdminOrSuperuser
 from .serializers import (
@@ -24,6 +24,7 @@ from .serializers import (
     AvailabilitySerializer,
     BarberSerializer,
     CustomerBookingSerializer,
+    HaircutWorkSerializer,
 )
 
 
@@ -65,6 +66,12 @@ class BarberListView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
 
+class PublicHaircutWorkListView(generics.ListAPIView):
+    queryset = HaircutWork.objects.filter(is_published=True)
+    serializer_class = HaircutWorkSerializer
+    permission_classes = [AllowAny]
+
+
 class BarberPhotoView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -91,6 +98,20 @@ class AdminBarberListCreateView(generics.ListCreateAPIView):
 class AdminBarberDetailView(generics.RetrieveUpdateAPIView):
     queryset = Barber.objects.all()
     serializer_class = BarberSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsSubAdminOrSuperuser, AdminModelPermissions]
+
+
+class AdminHaircutWorkListCreateView(generics.ListCreateAPIView):
+    queryset = HaircutWork.objects.all()
+    serializer_class = HaircutWorkSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsSubAdminOrSuperuser, AdminModelPermissions]
+
+
+class AdminHaircutWorkDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = HaircutWork.objects.all()
+    serializer_class = HaircutWorkSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsSubAdminOrSuperuser, AdminModelPermissions]
 

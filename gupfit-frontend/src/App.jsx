@@ -37,6 +37,10 @@ function emptyBarberForm() {
   return { name: '', bio: '', photo: null, remove_photo: false, is_active: true }
 }
 
+function emptyWorkForm() {
+  return { title: '', description: '', image: null }
+}
+
 function BookingTable({ bookings, emptyMessage, onViewReceipt, onReviewBooking, reviewingBookingId }) {
   if (bookings.length === 0) return <p className="empty-note">{emptyMessage}</p>
 
@@ -81,6 +85,9 @@ export default function App() {
   const [reviewingBookingId, setReviewingBookingId] = useState(null)
   const [receiptLoadingId, setReceiptLoadingId] = useState(null)
   const [receiptPreview, setReceiptPreview] = useState(null)
+  const [works, setWorks] = useState([])
+  const [workForm, setWorkForm] = useState(emptyWorkForm)
+  const [workPreview, setWorkPreview] = useState('')
 
   const loadDashboard = useCallback(async (activeToken = token) => {
     if (!activeToken) return
@@ -91,9 +98,11 @@ export default function App() {
         apiRequest('/api/admin/availability/', { token: activeToken }),
         apiRequest('/api/admin/bookings/', { token: activeToken }),
       ])
+      const workData = await apiRequest('/api/admin/works/', { token: activeToken })
       setBarbers(barberData)
       setAvailability(availabilityData)
       setBookings(bookingData)
+      setWorks(workData)
       setAvailabilityForm((current) => ({
         ...current,
         barber: current.barber || String(barberData.find((barber) => barber.is_active)?.id || ''),
@@ -110,6 +119,16 @@ export default function App() {
       }
     }
   }, [token])
+
+  useEffect(() => {
+    if (!workForm.image) {
+      setWorkPreview('')
+      return undefined
+    }
+    const previewUrl = URL.createObjectURL(workForm.image)
+    setWorkPreview(previewUrl)
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [workForm.image])
 
   useEffect(() => {
     if (token) loadDashboard(token)
@@ -214,6 +233,66 @@ export default function App() {
     }
     setPageError('')
     setBarberForm((current) => ({ ...current, photo: file, remove_photo: false }))
+  }
+
+  function selectWorkImage(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!/\.(jpe?g|png|webp)$/i.test(file.name)) {
+      setPageError('Choose a JPG, PNG, or WebP haircut photo.')
+      event.target.value = ''
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setPageError('The image must be 5 MB or smaller.')
+      event.target.value = ''
+      return
+    }
+    setPageError('')
+    setWorkForm((current) => ({ ...current, image: file }))
+  }
+
+  async function submitWork(event) {
+    event.preventDefault()
+    if (!workForm.image) {
+      setPageError('Choose a haircut photo to upload.')
+      return
+    }
+    setBusy(true)
+    setPageError('')
+    setNotice('')
+    try {
+      const payload = new FormData()
+      payload.append('title', workForm.title)
+      payload.append('description', workForm.description)
+      payload.append('image', workForm.image)
+      payload.append('sort_order', String(works.length))
+      payload.append('is_published', 'true')
+      await apiRequest('/api/admin/works/', { method: 'POST', token, body: payload })
+      setWorkForm(emptyWorkForm())
+      setNotice('Haircut added to your work gallery.')
+      await loadDashboard(token)
+    } catch (error) {
+      setPageError(error.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function deleteWork(work) {
+    if (!window.confirm(`Remove ${work.title || 'this haircut'} from the gallery?`)) return
+    setBusy(true)
+    setPageError('')
+    setNotice('')
+    try {
+      await apiRequest(`/api/admin/works/${work.id}/`, { method: 'DELETE', token })
+      setNotice('Haircut removed from the gallery.')
+      await loadDashboard(token)
+    } catch (error) {
+      setPageError(error.message)
+    } finally {
+      setBusy(false)
+    }
   }
 
   function startEditingBarber(barber) {
@@ -366,6 +445,7 @@ export default function App() {
             ['bookings', 'Bookings', '02'],
             ['availability', 'Availability', '03'],
             ['barbers', 'Barbers', '04'],
+            ['works', 'Our work', '05'],
           ].map(([page, label, number]) => (
             <button className={`side-link${activePage === page ? ' side-link-active' : ''}`} key={page} onClick={() => { setActivePage(page); setNotice(''); setPageError('') }} type="button">
               <span className="side-link-number">{number}</span><span>{label}</span>
@@ -464,6 +544,32 @@ export default function App() {
               </section>
               <section className="panel data-panel"><div className="panel-heading"><div><p className="eyebrow">TEAM</p><h2>Current barbers</h2></div><span className="count-pill">{barbers.length}</span></div>
                 {barbers.length === 0 ? <p className="empty-note">No barbers added yet.</p> : <div className="barber-list">{barbers.map((barber) => <article className="barber-row" key={barber.id}>{barber.photo_url ? <img src={barber.photo_url} alt="" /> : <span className="barber-initial">{barber.name.charAt(0).toUpperCase()}</span>}<div><strong>{barber.name}</strong>{barber.bio && <small>{barber.bio}</small>}</div><span className={`booking-status${barber.is_active ? '' : ' booking-status--cancelled'}`}>{barber.is_active ? 'Active' : 'Inactive'}</span><button className="button button-secondary barber-edit-button" onClick={() => startEditingBarber(barber)} type="button">Edit</button></article>)}</div>}
+              </section>
+            </>
+          )}
+
+          {activePage === 'works' && (
+            <>
+              <section className="dashboard-intro"><p className="eyebrow">PORTFOLIO</p><h1>Our work</h1><p className="intro-copy">Upload haircut photos to showcase on the customer homepage.</p></section>
+              <section className="panel work-form-panel">
+                <div className="panel-heading"><div><p className="eyebrow">NEW HAIRCUT</p><h2>Add to the gallery</h2></div></div>
+                <form className="form-stack work-form" onSubmit={submitWork}>
+                  <label>Title <span className="optional">Optional</span><input maxLength="120" value={workForm.title} onChange={(event) => setWorkForm({ ...workForm, title: event.target.value })} placeholder="e.g. Low taper fade" /></label>
+                  <label>Description <span className="optional">Optional</span><textarea rows="2" value={workForm.description} onChange={(event) => setWorkForm({ ...workForm, description: event.target.value })} placeholder="A short note about this cut" /></label>
+                  <div className="work-upload-row">
+                    {workPreview ? <img className="work-upload-preview" src={workPreview} alt="Haircut preview" /> : <span className="work-upload-placeholder">Photo preview</span>}
+                    <label className="work-file-control">Haircut photo<input accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required type="file" onChange={selectWorkImage} /><small>JPG, PNG, or WebP. Maximum 5 MB.</small></label>
+                  </div>
+                  <button className="button button-primary" disabled={busy} type="submit">{busy ? 'Uploading...' : 'Add to gallery'}</button>
+                </form>
+              </section>
+              <section className="panel data-panel">
+                <div className="panel-heading"><div><p className="eyebrow">PUBLIC GALLERY</p><h2>Haircut photos</h2></div><span className="count-pill">{works.length}</span></div>
+                {works.length === 0 ? <p className="empty-note">No haircut photos have been added yet.</p> : <div className="admin-work-grid">{works.map((work) => <article className="admin-work-card" key={work.id}>
+                  <img src={work.image_url} alt={work.title || 'Haircut work'} />
+                  <div><strong>{work.title || 'Untitled haircut'}</strong>{work.description && <small>{work.description}</small>}</div>
+                  <button className="button button-secondary" disabled={busy} onClick={() => deleteWork(work)} type="button">Remove</button>
+                </article>)}</div>}
               </section>
             </>
           )}

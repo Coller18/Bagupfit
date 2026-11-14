@@ -2,7 +2,8 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from pathlib import Path
-from .models import Availability, Barber, Booking
+from .models import Availability, Barber, Booking, HaircutWork
+from .public_storage import upload_public_image
 
 
 class BarberSerializer(serializers.ModelSerializer):
@@ -15,10 +16,12 @@ class BarberSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'bio', 'photo', 'photo_url', 'remove_photo', 'is_active', 'created_at']
 
     def get_photo_url(self, barber):
+        if barber.photo_url:
+            return barber.photo_url
         if barber.photo:
             request = self.context.get('request')
             return reverse('barber-photo', kwargs={'pk': barber.pk}, request=request)
-        return barber.photo_url
+        return ''
 
     def validate_photo(self, photo):
         allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
@@ -33,19 +36,56 @@ class BarberSerializer(serializers.ModelSerializer):
         return photo
 
     def create(self, validated_data):
-        remove_photo = validated_data.pop('remove_photo', False)
-        if remove_photo:
-            validated_data.pop('photo', None)
+        validated_data.pop('remove_photo', False)
+        photo = validated_data.pop('photo', None)
+        if photo:
+            validated_data['photo_url'] = upload_public_image(photo, 'barbers')
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
         remove_photo = validated_data.pop('remove_photo', False)
-        replacing_photo = 'photo' in validated_data
-        if remove_photo or replacing_photo:
+        photo = validated_data.pop('photo', None)
+        if remove_photo or photo:
             if instance.photo:
                 instance.photo.delete(save=False)
-            instance.photo = ''
+                instance.photo = ''
             instance.photo_url = ''
+        if photo:
+            validated_data['photo_url'] = upload_public_image(photo, 'barbers')
+        return super().update(instance, validated_data)
+
+
+class HaircutWorkSerializer(serializers.ModelSerializer):
+    image = serializers.FileField(write_only=True, required=False)
+    image_url = serializers.URLField(read_only=True)
+
+    class Meta:
+        model = HaircutWork
+        fields = ['id', 'title', 'description', 'image', 'image_url', 'is_published', 'sort_order', 'created_at']
+        read_only_fields = ['id', 'image_url', 'created_at']
+
+    def validate_image(self, image):
+        allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp'}
+        if Path(image.name).suffix.lower() not in allowed_extensions:
+            raise serializers.ValidationError('Use a JPG, PNG, or WebP image.')
+        if image.size > 5 * 1024 * 1024:
+            raise serializers.ValidationError('The image must be 5 MB or smaller.')
+        content_type = getattr(image, 'content_type', '')
+        if content_type and content_type not in {'image/jpeg', 'image/png', 'image/webp'}:
+            raise serializers.ValidationError('Upload a JPG, PNG, or WebP image.')
+        return image
+
+    def create(self, validated_data):
+        image = validated_data.pop('image', None)
+        if not image:
+            raise serializers.ValidationError({'image': 'Choose a haircut photo to upload.'})
+        validated_data['image_url'] = upload_public_image(image, 'haircut-works')
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        image = validated_data.pop('image', None)
+        if image:
+            validated_data['image_url'] = upload_public_image(image, 'haircut-works')
         return super().update(instance, validated_data)
 
 

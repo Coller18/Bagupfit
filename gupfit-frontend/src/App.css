@@ -226,6 +226,20 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px
 .receipt-modal > img { width: 100%; max-height: calc(90vh - 78px); flex: 1; object-fit: contain; background: #181818; }
 .receipt-modal > iframe { width: 100%; min-height: min(75vh, 760px); border: 0; background: #f4f4f4; }
 
+.work-form { max-width: 760px; }
+.work-upload-row { display: grid; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 18px; }
+.work-upload-preview,.work-upload-placeholder { width: 180px; height: 180px; display: grid; place-items: center; border: 1px solid #343434; background: #101010; color: #999; object-fit: cover; }
+.work-file-control { display: flex; flex-direction: column; gap: 9px; }
+.work-file-control input { width: 100%; color: #ddd; }
+.work-file-control small { color: #999; font-size: 11px; }
+.admin-work-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.admin-work-card { min-width: 0; overflow: hidden; border: 1px solid #303030; background: #101010; }
+.admin-work-card > img { width: 100%; aspect-ratio: 4 / 5; display: block; object-fit: cover; }
+.admin-work-card > div { display: flex; flex-direction: column; gap: 5px; padding: 12px; }
+.admin-work-card strong { color: #f4f4f4; font-size: 13px; }
+.admin-work-card small { color: #aaa; font-size: 11px; line-height: 1.5; }
+.admin-work-card > button { margin: 0 12px 12px; }
+
 @media (max-width: 1000px) {
   .dashboard-layout { grid-template-columns: 190px minmax(0, 1fr); gap: 20px; }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -263,4 +277,9 @@ td small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px
   .booking-review-actions { align-items: stretch; flex-direction: column; }
   .receipt-modal-backdrop { padding: 10px; }
   .receipt-modal { max-height: 94vh; }
+}
+
+@media (max-width: 620px) {
+  .work-upload-row { grid-template-columns: 1fr; }
+  .work-upload-preview,.work-upload-placeholder { width: min(100%, 260px); height: 260px; }
 }

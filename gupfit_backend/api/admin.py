@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import Availability, Barber, Booking
+from .models import Availability, Barber, Booking, HaircutWork
+
+
+@admin.register(HaircutWork)
+class HaircutWorkAdmin(admin.ModelAdmin):
+    list_display = ['title', 'is_published', 'sort_order', 'created_at']
+    list_filter = ['is_published']
+    search_fields = ['title', 'description']
 
 
 @admin.register(Barber)

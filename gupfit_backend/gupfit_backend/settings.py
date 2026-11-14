@@ -186,3 +186,5 @@ CSRF_COOKIE_SECURE = not DEBUG
 # Supabase customer authentication. Set SUPABASE_PUBLISHABLE_KEY in the backend environment.
 SUPABASE_URL = os.environ.get('SUPABASE_URL', 'https://hqgyaooshriuxdqlbdvd.supabase.co')
 SUPABASE_PUBLISHABLE_KEY = os.environ.get('SUPABASE_PUBLISHABLE_KEY', '')
+SUPABASE_SECRET_KEY = os.environ.get('SUPABASE_SECRET_KEY') or os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
+SUPABASE_STORAGE_BUCKET = os.environ.get('SUPABASE_STORAGE_BUCKET', 'gupfit-public-images')

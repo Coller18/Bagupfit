@@ -2,8 +2,6 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { API_BASE_URL, apiRequest } from './api.js'
 import brandLogo from './logo-white.png'
 import heroVideo from './hero.mp4'
-import barberFallback from './barber-placeholder.svg'
-import CircularCarousel from './CircularCarousel.jsx'
 import ScrollStack, { ScrollStackItem } from './ScrollStack.jsx'
 import SiteFooter from './SiteFooter.jsx'
 import { supabase } from './supabase.js'
@@ -12,18 +10,17 @@ import './App.css'
 const MicroSlats = lazy(() => import('./MicroSlats.jsx'))
 
 export default function App() {
-  const [barbers, setBarbers] = useState([])
+  const [works, setWorks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [customerSession, setCustomerSession] = useState(null)
   const [authResolved, setAuthResolved] = useState(false)
-  const [activeBarberIndex, setActiveBarberIndex] = useState(0)
 
-  const loadBarbers = useCallback(async () => {
+  const loadWorks = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      setBarbers(await apiRequest('/api/barbers/'))
+      setWorks(await apiRequest('/api/works/'))
     } catch (requestError) {
       setError(requestError.message || `Could not connect to ${API_BASE_URL}.`)
     } finally {
@@ -31,7 +28,7 @@ export default function App() {
     }
   }, [])
 
-  useEffect(() => { loadBarbers() }, [loadBarbers])
+  useEffect(() => { loadWorks() }, [loadWorks])
 
   useEffect(() => {
     if (!supabase) {
@@ -48,15 +45,6 @@ export default function App() {
     })
     return () => subscription.unsubscribe()
   }, [])
-
-  const availableBarbers = barbers.filter((barber) => barber.is_active)
-  const teamItems = availableBarbers.map((barber) => ({
-    src: barber.photo_url || barberFallback,
-    alt: barber.photo_url ? `Portrait of ${barber.name}` : `Profile placeholder for ${barber.name}`,
-    title: barber.name,
-    subtitle: 'Gupfit barber',
-  }))
-  const activeBarber = availableBarbers[activeBarberIndex] || availableBarbers[0]
 
   return (
     <main className="customer-home">
@@ -75,7 +63,7 @@ export default function App() {
       <section className="hero" id="home">
         <header className="site-header">
           <nav className="site-nav" aria-label="Main navigation">
-            <a href="#team">Our team</a>
+            <a href="#work">Our work</a>
             {authResolved && customerSession ? <>
               <a href="/my-bookings">My bookings</a>
               <a className="nav-cta" href="/booking">Book a time</a>
@@ -91,7 +79,7 @@ export default function App() {
             className="hero-micro-slats"
             preset="swell"
             color="#050505"
-            glintColor="#ffffff"
+            glintColor="#e69d00"
             backgroundColor="transparent"
             slatWidth={10}
             slatHeight={25}
@@ -129,52 +117,23 @@ export default function App() {
       </section>
       </ScrollStackItem>
 
-      <ScrollStackItem itemClassName="home-stack-panel home-stack-panel--team">
-      <section className="team-section content-section" id="team">
+      <ScrollStackItem itemClassName="home-stack-panel home-stack-panel--work">
+      <section className="team-section content-section work-section" id="work">
         <div className="section-heading">
-          <div><p className="eyebrow">THE GUPFIT CREW</p><h2>Meet the team.</h2></div>
-          <p className="section-index">01 <span>/</span> PEOPLE BEHIND THE CHAIR</p>
+          <div><p className="eyebrow">GUPFIT CUTS</p><h2>Our work.</h2></div>
+          <p className="section-index">01 <span>/</span> HAIRCUTS BY GUPFIT</p>
         </div>
-        {loading && <p className="info-panel">Loading the team...</p>}
-        {error && <div className="info-panel info-error" role="alert"><span>{error}</span><button className="text-button" onClick={loadBarbers} type="button">Try again</button></div>}
-        {!loading && !error && availableBarbers.length === 0 && <p className="info-panel">The team is being updated. Please check back soon.</p>}
-        {!loading && !error && availableBarbers.length > 0 && <div className="team-carousel-layout">
-          <div className="team-carousel-stage">
-            <CircularCarousel
-              items={teamItems}
-              preset="cylinder"
-              intro="rise"
-              cardWidth={280}
-              aspectRatio={1}
-              speed={14}
-              captions={false}
-              gap={25}
-              tilt={-5}
-              curve={1}
-              perspective={2500}
-              autoplay="drift"
-              interval={3}
-              direction="left"
-              momentum={0.6}
-              snap
-              pauseOnHover
-              focusOnClick
-              draggable
-              parallax={0.3}
-              stretch={0.5}
-              fadeColor="#000000"
-              depthFade={0.55}
-              innerShade={0.6}
-              cornerRadius={12}
-              onChange={setActiveBarberIndex}
-              ariaLabel="Gupfit barbers"
-            />
-          </div>
-          {activeBarber && <div className="team-carousel-caption" aria-live="polite">
-            <span>BARBER {String((activeBarberIndex % availableBarbers.length) + 1).padStart(2, '0')} / {String(availableBarbers.length).padStart(2, '0')}</span>
-            <h3>{activeBarber.name}</h3>
-            {activeBarber.bio && <p>{activeBarber.bio}</p>}
-          </div>}
+        {loading && <p className="info-panel">Loading haircut photos...</p>}
+        {error && <div className="info-panel info-error" role="alert"><span>{error}</span><button className="text-button" onClick={loadWorks} type="button">Try again</button></div>}
+        {!loading && !error && works.length === 0 && <p className="info-panel">Haircut photos will appear here soon.</p>}
+        {!loading && !error && works.length > 0 && <div className="work-gallery">
+          {works.map((work, index) => <article className="work-gallery-card" key={work.id}>
+            <img src={work.image_url} alt={work.title ? `${work.title} haircut` : `Gupfit haircut ${index + 1}`} loading="lazy" />
+            {(work.title || work.description) && <div className="work-gallery-copy">
+              {work.title && <h3>{work.title}</h3>}
+              {work.description && <p>{work.description}</p>}
+            </div>}
+          </article>)}
         </div>}
       </section>
       </ScrollStackItem>

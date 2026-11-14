@@ -18,6 +18,23 @@ class Barber(models.Model):
         return self.name
 
 
+class HaircutWork(models.Model):
+    title = models.CharField(max_length=120, blank=True)
+    description = models.TextField(blank=True)
+    image_url = models.URLField()
+    is_published = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['sort_order', '-created_at']
+        verbose_name = 'haircut work'
+        verbose_name_plural = 'haircut works'
+
+    def __str__(self):
+        return self.title or f'Haircut work {self.pk}'
+
+
 class Availability(models.Model):
     barber = models.ForeignKey(Barber, on_delete=models.CASCADE, related_name='availability')
     date = models.DateField()
