@@ -306,7 +306,13 @@ class TelegramBookingWebhookView(APIView):
         text = str(message.get('text') or '')
         command_parts = text.split(maxsplit=1)
         command = command_parts[0].split('@', 1)[0] if command_parts else ''
-        if command != '/start' or len(command_parts) < 2:
+        if command != '/start':
+            return Response({'ok': True})
+        if len(command_parts) < 2:
+            send_customer_message(
+                chat_id,
+                'To get booking updates, submit a booking on the Gupfit website and tap its "Connect Telegram for booking updates" link.',
+            )
             return Response({'ok': True})
 
         token = command_parts[1].strip()
