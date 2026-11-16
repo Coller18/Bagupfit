@@ -28,6 +28,7 @@ export default function BookingPage() {
   const [authLoading, setAuthLoading] = useState(true)
   const [bookingError, setBookingError] = useState('')
   const [success, setSuccess] = useState('')
+  const [submittedBooking, setSubmittedBooking] = useState(null)
   const [telegramLinkUrl, setTelegramLinkUrl] = useState('')
   const [telegramConnected, setTelegramConnected] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -144,6 +145,7 @@ export default function BookingPage() {
     setSubmitting(true)
     setBookingError('')
     setSuccess('')
+    setSubmittedBooking(null)
     setTelegramLinkUrl('')
     setTelegramConnected(false)
     try {
@@ -156,19 +158,36 @@ export default function BookingPage() {
         body: bookingData,
       })
       setSuccess('Receipt submitted. Your time is held while the shop reviews your payment.')
+      setSubmittedBooking({
+        id: result.id,
+        barberName: selectedBarber?.name,
+        date: form.date,
+        startTime: selectedSlot?.start_time,
+        endTime: selectedSlot?.end_time,
+        receiptName: paymentReceipt?.name,
+      })
       setTelegramLinkUrl(result.telegram_link_url || '')
       setTelegramConnected(Boolean(result.telegram_connected))
       setPaymentReceipt(null)
       setForm({ barber: '', date: '', availability: '' })
       setBookingStep(1)
-      const slotData = await apiRequest('/api/availability/')
-      setAvailability(slotData)
+      try { setAvailability(await apiRequest('/api/availability/')) } catch { /* The booking was submitted; keep showing its confirmation. */ }
     } catch (error) {
       setBookingError(error.message || 'Could not complete the booking.')
       try { setAvailability(await apiRequest('/api/availability/')) } catch { /* Keep the booking error visible. */ }
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function startAnotherBooking() {
+    setSuccess('')
+    setSubmittedBooking(null)
+    setTelegramLinkUrl('')
+    setTelegramConnected(false)
+    setPaymentReceipt(null)
+    setForm({ barber: '', date: '', availability: '' })
+    setBookingStep(1)
   }
 
   return (
@@ -188,10 +207,7 @@ export default function BookingPage() {
             <>
               <div className="form-title customer-account-heading"><span className="form-title-icon">{session.user.user_metadata?.full_name?.charAt(0)?.toUpperCase() || 'G'}</span><div><span className="team-kicker">SIGNED IN</span><h3>{session.user.user_metadata?.full_name || session.user.email}</h3><small>{session.user.email}</small></div><button className="text-button" onClick={signOutCustomer} type="button">Sign out</button></div>
               {bookingError && <p className="form-message form-message-error" role="alert">{bookingError}</p>}
-              {success && <p className="form-message form-message-success" role="status">{success}</p>}
-              {success && telegramLinkUrl && <p className="form-message form-message-success"><a href={telegramLinkUrl} rel="noreferrer" target="_blank">Connect Telegram for booking updates</a><br /><small>Optional. Tap Start in Telegram to receive your booking status.</small></p>}
-              {success && telegramConnected && <p className="form-message form-message-success">Telegram booking updates are connected to your account.</p>}
-              {loading ? <p className="info-panel">Loading available times...</p> : availableBarbers.length === 0 ? <p className="info-panel">No appointment times are available yet.</p> : (
+              {success ? <BookingSubmittedPanel booking={submittedBooking} telegramLinkUrl={telegramLinkUrl} telegramConnected={telegramConnected} onBookAnother={startAnotherBooking} /> : loading ? <p className="info-panel">Loading available times...</p> : availableBarbers.length === 0 ? <p className="info-panel">No appointment times are available yet.</p> : (
                 <div className="booking-wizard">
                   <ol className="booking-progress" aria-label="Booking progress">
                     {['Barber', 'Date', 'Time', 'Confirm'].map((label, index) => <li className={bookingStep === index + 1 ? 'booking-progress-current' : bookingStep > index + 1 ? 'booking-progress-complete' : ''} key={label}><span>{bookingStep > index + 1 ? '✓' : `0${index + 1}`}</span><small>{label}</small></li>)}
@@ -275,5 +291,58 @@ export default function BookingPage() {
 
       <SiteFooter />
     </main>
+  )
+}
+
+function BookingSubmittedPanel({ booking, telegramLinkUrl, telegramConnected, onBookAnother }) {
+  return (
+    <section className="booking-submitted-panel" aria-labelledby="booking-submitted-title" role="status">
+      <div className="booking-submitted-heading">
+        <span className="booking-submitted-check" aria-hidden="true">&#10003;</span>
+        <p className="eyebrow">RECEIPT RECEIVED</p>
+        <h1 id="booking-submitted-title">Your booking is in.</h1>
+        <p>Your payment receipt has been sent to the shop. Your appointment is held while the team reviews it.</p>
+      </div>
+
+      <div className="booking-submitted-summary">
+        <div className="booking-submitted-summary-top"><span>BOOKING REQUEST</span>{booking?.id && <strong>GF-{booking.id}</strong>}</div>
+        <div className="booking-submitted-appointment">
+          <div><span>BARBER</span><strong>{booking?.barberName || 'Your barber'}</strong></div>
+          <div><span>DATE &amp; TIME</span><strong>{booking?.date ? displayDate(booking.date) : 'Selected appointment'}{booking?.startTime ? ` · ${booking.startTime.slice(0, 5)}${booking?.endTime ? `–${booking.endTime.slice(0, 5)}` : ''}` : ''}</strong></div>
+        </div>
+        <div className="booking-submitted-receipt"><span className="booking-submitted-receipt-check" aria-hidden="true">&#10003;</span><div><strong>{booking?.receiptName || 'Payment receipt'}</strong><small>Uploaded successfully · awaiting review</small></div></div>
+        <div className="booking-submitted-status"><span className="booking-submitted-status-dot" /><span>Payment review</span><strong>In progress</strong></div>
+      </div>
+
+      <div className={`telegram-connect-card${telegramConnected ? ' telegram-connect-card-connected' : ''}`}>
+        <span className="telegram-brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" focusable="false">
+            <circle cx="24" cy="24" r="24" fill="currentColor" />
+            <path d="M35.7 13.9 31.3 35c-.3 1.5-1.2 1.9-2.4 1.2l-7-5.2-3.4 3.3c-.4.4-.7.7-1.4.7l.5-7.1 12.9-11.7c.6-.5-.1-.8-.9-.3L13.7 26.1l-6.9-2.2c-1.5-.5-1.5-1.5.3-2.2l26.7-10.3c1.2-.4 2.3.3 1.9 2.5Z" fill="#fff" />
+          </svg>
+        </span>
+        <div className="telegram-connect-copy">
+          <p className="eyebrow">OPTIONAL · BOOKING UPDATES</p>
+          <h2>{telegramConnected ? 'Telegram is connected.' : 'Stay in the loop on Telegram.'}</h2>
+          <p>{telegramConnected ? 'We’ll message you here when the shop confirms or updates your booking.' : 'Connect your Telegram account and we’ll message you as soon as your booking is reviewed.'}</p>
+        </div>
+        {telegramLinkUrl ? (
+          <a className="telegram-connect-button" href={telegramLinkUrl} rel="noreferrer" target="_blank">
+            <span>Connect Telegram</span><span aria-hidden="true">&#8594;</span>
+          </a>
+        ) : telegramConnected ? (
+          <span className="telegram-connected-badge"><span aria-hidden="true">&#10003;</span> Connected</span>
+        ) : (
+          <span className="telegram-unavailable-note">Check status in My bookings</span>
+        )}
+      </div>
+
+      {telegramLinkUrl && <p className="telegram-connect-hint">Tap the button, then press <strong>Start</strong> in Telegram to finish linking.</p>}
+
+      <div className="booking-submitted-actions">
+        <a className="booking-submitted-secondary" href="/my-bookings">View my bookings <span aria-hidden="true">&#8594;</span></a>
+        <button className="booking-submitted-new" onClick={onBookAnother} type="button">Book another time</button>
+      </div>
+    </section>
   )
 }
