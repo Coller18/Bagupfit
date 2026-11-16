@@ -1,4 +1,5 @@
 import json
+import hashlib
 import logging
 import mimetypes
 import os
@@ -91,6 +92,44 @@ def update_booking_message(chat_id, message_id, booking, status_label):
         'caption': format_booking_caption(booking, status_label),
         'reply_markup': {'inline_keyboard': []},
     })
+
+
+def hash_link_token(token):
+    return hashlib.sha256(token.encode('utf-8')).hexdigest()
+
+
+def send_customer_link_message(chat_id):
+    return send_customer_message(
+        chat_id,
+        "You're connected to Gupfit booking updates. We'll message you when your booking is confirmed or cancelled.",
+    )
+
+
+def send_customer_message(chat_id, text):
+    return _telegram_json('sendMessage', {'chat_id': chat_id, 'text': text})
+
+
+def send_customer_booking_status_notification(booking):
+    from .models import CustomerTelegramConnection
+
+    connection = CustomerTelegramConnection.objects.filter(customer_id=booking.customer_id).first()
+    if not connection or not connection.telegram_chat_id:
+        return
+
+    availability = booking.availability
+    if booking.status == booking.Status.CONFIRMED:
+        heading = 'Your Gupfit booking is confirmed.'
+    elif booking.status == booking.Status.CANCELLED:
+        heading = 'Your Gupfit booking was cancelled.'
+    else:
+        return
+    message = '\n'.join([
+        heading,
+        f'Barber: {availability.barber.name}',
+        f'Date: {availability.date:%d %b %Y}',
+        f'Time: {availability.start_time:%H:%M}-{availability.end_time:%H:%M}',
+    ])
+    _telegram_json('sendMessage', {'chat_id': connection.telegram_chat_id, 'text': message})
 
 
 def _telegram_json(method, payload):

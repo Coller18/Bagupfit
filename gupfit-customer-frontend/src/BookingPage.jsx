@@ -28,6 +28,8 @@ export default function BookingPage() {
   const [authLoading, setAuthLoading] = useState(true)
   const [bookingError, setBookingError] = useState('')
   const [success, setSuccess] = useState('')
+  const [telegramLinkUrl, setTelegramLinkUrl] = useState('')
+  const [telegramConnected, setTelegramConnected] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [paymentReceipt, setPaymentReceipt] = useState(null)
   const [form, setForm] = useState({ barber: '', date: '', availability: '' })
@@ -142,16 +144,20 @@ export default function BookingPage() {
     setSubmitting(true)
     setBookingError('')
     setSuccess('')
+    setTelegramLinkUrl('')
+    setTelegramConnected(false)
     try {
       const bookingData = new FormData()
       bookingData.append('availability', String(Number(form.availability)))
       bookingData.append('payment_receipt', paymentReceipt)
-      await apiRequest('/api/bookings/', {
+      const result = await apiRequest('/api/bookings/', {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: bookingData,
       })
       setSuccess('Receipt submitted. Your time is held while the shop reviews your payment.')
+      setTelegramLinkUrl(result.telegram_link_url || '')
+      setTelegramConnected(Boolean(result.telegram_connected))
       setPaymentReceipt(null)
       setForm({ barber: '', date: '', availability: '' })
       setBookingStep(1)
@@ -183,6 +189,8 @@ export default function BookingPage() {
               <div className="form-title customer-account-heading"><span className="form-title-icon">{session.user.user_metadata?.full_name?.charAt(0)?.toUpperCase() || 'G'}</span><div><span className="team-kicker">SIGNED IN</span><h3>{session.user.user_metadata?.full_name || session.user.email}</h3><small>{session.user.email}</small></div><button className="text-button" onClick={signOutCustomer} type="button">Sign out</button></div>
               {bookingError && <p className="form-message form-message-error" role="alert">{bookingError}</p>}
               {success && <p className="form-message form-message-success" role="status">{success}</p>}
+              {success && telegramLinkUrl && <p className="form-message form-message-success"><a href={telegramLinkUrl} rel="noreferrer" target="_blank">Connect Telegram for booking updates</a><br /><small>Optional. Tap Start in Telegram to receive your booking status.</small></p>}
+              {success && telegramConnected && <p className="form-message form-message-success">Telegram booking updates are connected to your account.</p>}
               {loading ? <p className="info-panel">Loading available times...</p> : availableBarbers.length === 0 ? <p className="info-panel">No appointment times are available yet.</p> : (
                 <div className="booking-wizard">
                   <ol className="booking-progress" aria-label="Booking progress">

@@ -1,6 +1,8 @@
-from django.contrib.auth import authenticate
 import hmac
 import os
+import secrets
+from datetime import timedelta
+from django.contrib.auth import authenticate
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -17,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from .models import Availability, Barber, Booking, HaircutWork
+from .models import Availability, Barber, Booking, CustomerTelegramConnection, HaircutWork
 from .authentication import SupabaseAuthAuthentication
 from .permissions import AdminModelPermissions, IsSubAdminOrSuperuser
 from .serializers import (
@@ -30,6 +32,10 @@ from .serializers import (
 )
 from .telegram import (
     answer_callback_query,
+    hash_link_token,
+    send_customer_booking_status_notification,
+    send_customer_link_message,
+    send_customer_message,
     send_new_booking_notification,
     update_booking_message,
 )
@@ -165,6 +171,13 @@ class AdminBookingReviewView(generics.UpdateAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsSubAdminOrSuperuser, AdminModelPermissions]
 
+    def perform_update(self, serializer):
+        booking = serializer.save()
+        transaction.on_commit(
+            lambda booking=booking: send_customer_booking_status_notification(booking),
+            robust=True,
+        )
+
 
 class AdminBookingReceiptView(APIView):
     queryset = Booking.objects.all()
@@ -187,6 +200,12 @@ class CustomerBookingCreateView(generics.CreateAPIView):
     authentication_classes = [SupabaseAuthAuthentication]
     permission_classes = [IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        response.data['telegram_link_url'] = getattr(self, 'telegram_link_url', None)
+        response.data['telegram_connected'] = getattr(self, 'telegram_connected', False)
+        return response
+
     @transaction.atomic
     def perform_create(self, serializer):
         availability_id = serializer.validated_data['availability'].pk
@@ -204,6 +223,22 @@ class CustomerBookingCreateView(generics.CreateAPIView):
             customer_phone=str(self.request.user.user_metadata.get('phone') or '').strip(),
             status=Booking.Status.PENDING_REVIEW,
         )
+        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', '').strip().lstrip('@')
+        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
+        if bot_username and bot_token:
+            connection, _ = CustomerTelegramConnection.objects.get_or_create(
+                customer_id=self.request.user.pk,
+            )
+            if connection.telegram_chat_id:
+                self.telegram_connected = True
+                self.telegram_link_url = None
+            else:
+                token = secrets.token_urlsafe(24)
+                connection.link_token_hash = hash_link_token(token)
+                connection.link_token_expires_at = timezone.now() + timedelta(days=7)
+                connection.save(update_fields=['link_token_hash', 'link_token_expires_at'])
+                self.telegram_connected = False
+                self.telegram_link_url = f'https://t.me/{bot_username}?start={token}'
         transaction.on_commit(
             lambda booking=booking: send_new_booking_notification(booking),
             robust=True,
@@ -219,6 +254,10 @@ class TelegramBookingWebhookView(APIView):
         supplied_secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
         if not expected_secret or not hmac.compare_digest(supplied_secret, expected_secret):
             return Response({'detail': 'Invalid webhook secret.'}, status=status.HTTP_403_FORBIDDEN)
+
+        customer_message = request.data.get('message') or {}
+        if customer_message:
+            return self._handle_customer_start(customer_message)
 
         callback = request.data.get('callback_query') or {}
         callback_id = callback.get('id')
@@ -254,6 +293,51 @@ class TelegramBookingWebhookView(APIView):
         result_label = 'confirmed' if next_status == Booking.Status.CONFIRMED else 'cancelled'
         answer_callback_query(callback_id, f'Booking {result_label}.')
         update_booking_message(chat_id, message.get('message_id'), booking, result_label)
+        send_customer_booking_status_notification(booking)
+        return Response({'ok': True})
+
+    def _handle_customer_start(self, message):
+        chat = message.get('chat') or {}
+        sender = message.get('from') or {}
+        chat_id = str(chat.get('id', ''))
+        if chat.get('type') != 'private' or not chat_id or str(sender.get('id', '')) != chat_id:
+            return Response({'ok': True})
+
+        text = str(message.get('text') or '')
+        command_parts = text.split(maxsplit=1)
+        command = command_parts[0].split('@', 1)[0] if command_parts else ''
+        if command != '/start' or len(command_parts) < 2:
+            return Response({'ok': True})
+
+        token = command_parts[1].strip()
+        token_hash = hash_link_token(token)
+        now = timezone.now()
+        with transaction.atomic():
+            connection = CustomerTelegramConnection.objects.select_for_update().filter(
+                link_token_hash=token_hash,
+                link_token_expires_at__gt=now,
+            ).first()
+            if connection and CustomerTelegramConnection.objects.filter(
+                telegram_chat_id=chat_id,
+            ).exclude(pk=connection.pk).exists():
+                connection = None
+            if connection:
+                connection.telegram_chat_id = chat_id
+                connection.link_token_hash = None
+                connection.link_token_expires_at = None
+                connection.connected_at = now
+                connection.save(update_fields=[
+                    'telegram_chat_id', 'link_token_hash', 'link_token_expires_at', 'connected_at',
+                ])
+
+        if not connection:
+            send_customer_message(chat_id, 'That Gupfit link is invalid or expired. Please get a fresh Telegram link from your booking page.')
+            return Response({'ok': True})
+
+        send_customer_link_message(chat_id)
+        latest_booking = Booking.objects.filter(customer_id=connection.customer_id).order_by('-created_at').first()
+        if latest_booking and latest_booking.status in {Booking.Status.CONFIRMED, Booking.Status.CANCELLED}:
+            send_customer_booking_status_notification(latest_booking)
         return Response({'ok': True})
 
 

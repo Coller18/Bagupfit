@@ -1,30 +1,50 @@
-# Telegram booking notifications
+# Telegram booking notifications and approvals
 
-The backend can send a Telegram message after a customer booking is successfully committed. The notification is optional: if either environment variable is unset, bookings work normally without sending a message.
+The backend sends you a Telegram message with the uploaded receipt and **Approve** / **Reject** buttons when a customer books. Customers can optionally link their own Telegram account after booking; the bot then messages them when you confirm or cancel their booking.
 
-## Configure the bot
+## 1. Deploy the latest backend code
 
-1. In Telegram, message **@BotFather**, create a bot with `/newbot`, and copy its token.
-2. Open the new bot from your Telegram account and send `/start`.
-3. Get your chat ID from `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates` after sending `/start`. Keep the bot token private; it grants control over the bot.
-4. Generate a long random webhook secret (for example, run `python -c "import secrets; print(secrets.token_urlsafe(32))"`). In Render, open the Django backend web service, go to **Environment**, and add:
-   - `TELEGRAM_BOT_TOKEN` — the token from BotFather
-   - `TELEGRAM_CHAT_ID` — your Telegram chat ID
-   - `TELEGRAM_WEBHOOK_SECRET` — the random secret you generated
-5. Save the changes and redeploy/restart the service. Your booking alerts will have **Approve** and **Reject** buttons after this deploy.
-6. Register the webhook once from PowerShell, replacing the placeholders with your values and your Render service hostname:
+Deploy the latest project changes to your Render backend service first. The webhook URL will only work after Render is running the updated code. This feature adds a database table, so make sure your backend deployment applies Django migrations with `python manage.py migrate`.
 
-   ```powershell
-   $token = Read-Host "Telegram bot token"
-   $secret = Read-Host "Telegram webhook secret"
-   $body = @{
-     url = "https://YOUR-SERVICE.onrender.com/api/telegram/webhook/"
-     secret_token = $secret
-     allowed_updates = '["callback_query"]'
-   }
-   Invoke-RestMethod -Method Post -Uri "https://api.telegram.org/bot$token/setWebhook" -Body $body
-   ```
+## 2. Add a webhook secret in Render
 
-   Telegram should return `ok: true`. The bot token is used in this local command; do not share the command or its output if it contains your token.
+Generate a secret on your own Windows computer. Open PowerShell on your computer (not in Render) and run:
 
-Each new booking produces a Telegram document message with the uploaded receipt and a caption containing the customer and appointment details and pending-review status. Approve and Reject update the booking in Gupfit and remove the buttons from the message. The webhook accepts actions only from the configured private chat and checks Telegram's webhook secret. The notification is sent after the database transaction commits, so a failed booking will not trigger an alert. A Telegram delivery problem is logged and does not undo or reject a booking. Telegram will receive and process the receipt and booking details, so enable this only if that matches your privacy practices.
+```powershell
+$secret = python -c "import secrets; print(secrets.token_urlsafe(32))"
+$secret
+```
+
+Copy the value it prints. In the Render dashboard, open your backend web service, go to **Environment**, and add:
+
+- `TELEGRAM_WEBHOOK_SECRET` — paste the generated value
+
+The service should redeploy after you save. Keep this PowerShell window open; the `$secret` variable is used in the next step.
+
+Your existing `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` values should remain set in Render. Do not share the bot token.
+
+Also add `TELEGRAM_BOT_USERNAME` in Render. Set it to your bot's username without the `@` (for example, `gupfit_booking_bot`). This lets the booking page create the client's opt-in link.
+
+## 3. Register the webhook with Telegram
+
+In Render, open the backend service and copy its public URL, such as `https://gupfit-api.onrender.com`. Back in the same local PowerShell window, replace the example URL below with your actual Render URL and run these commands:
+
+```powershell
+$token = Read-Host "Paste your Telegram bot token"
+$body = @{
+  url = "https://YOUR-SERVICE.onrender.com/api/telegram/webhook/"
+  secret_token = $secret
+  allowed_updates = '["message","callback_query"]'
+}
+Invoke-RestMethod -Method Post -Uri "https://api.telegram.org/bot$token/setWebhook" -Body $body
+```
+
+This command runs on your Windows computer, not in Render. Telegram should respond with `ok: true`. Do not share the command output or the bot token.
+
+## What happens next
+
+New booking alerts include the receipt and booking details. Approve marks the booking confirmed; Reject marks it cancelled. The buttons are removed after a decision. The webhook accepts owner actions only from the configured private Telegram chat and checks the webhook secret. Existing Telegram messages do not gain buttons retroactively.
+
+After submitting a booking, a client can choose **Connect Telegram for booking updates** and tap **Start** in the bot. The link is one-time and expires after seven days. Once connected, that Gupfit account receives a Telegram message when a booking is confirmed or cancelled. Clients who do not connect Telegram can still see their booking status on the website.
+
+Telegram receives the uploaded receipt and booking details, so enable this only if that matches your privacy practices. A failed Telegram notification does not undo or reject the booking.

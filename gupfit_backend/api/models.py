@@ -87,3 +87,19 @@ class Booking(models.Model):
 
     def __str__(self):
         return f'{self.customer_name} - {self.availability}'
+
+
+class CustomerTelegramConnection(models.Model):
+    customer_id = models.UUIDField(unique=True)
+    telegram_chat_id = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    link_token_hash = models.CharField(max_length=64, unique=True, null=True, blank=True)
+    link_token_expires_at = models.DateTimeField(null=True, blank=True)
+    connected_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'customer Telegram connection'
+        verbose_name_plural = 'customer Telegram connections'
+
+    def __str__(self):
+        return f'Telegram connection for customer {self.customer_id}'
