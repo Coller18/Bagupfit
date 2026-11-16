@@ -1,4 +1,5 @@
 import hmac
+import logging
 import os
 import secrets
 from datetime import timedelta
@@ -39,6 +40,9 @@ from .telegram import (
     send_new_booking_notification,
     update_booking_message,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class SubAdminLoginView(APIView):
@@ -253,19 +257,23 @@ class TelegramBookingWebhookView(APIView):
         expected_secret = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '').strip()
         supplied_secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
         if not expected_secret or not hmac.compare_digest(supplied_secret, expected_secret):
+            logger.warning('Rejected Telegram webhook update: invalid secret.')
             return Response({'detail': 'Invalid webhook secret.'}, status=status.HTTP_403_FORBIDDEN)
 
         customer_message = request.data.get('message') or {}
         if customer_message:
+            logger.info('Received Telegram message update.')
             return self._handle_customer_start(customer_message)
 
         callback = request.data.get('callback_query') or {}
+        logger.info('Received Telegram callback update.')
         callback_id = callback.get('id')
         message = callback.get('message') or {}
         chat_id = str((message.get('chat') or {}).get('id', ''))
         user_id = str((callback.get('from') or {}).get('id', ''))
         allowed_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
         if not callback_id or chat_id != allowed_chat_id or user_id != allowed_chat_id:
+            logger.warning('Rejected Telegram callback update: chat is not authorized.')
             return Response({'detail': 'Unauthorized Telegram chat.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
@@ -293,7 +301,11 @@ class TelegramBookingWebhookView(APIView):
         result_label = 'confirmed' if next_status == Booking.Status.CONFIRMED else 'cancelled'
         answer_callback_query(callback_id, f'Booking {result_label}.')
         update_booking_message(chat_id, message.get('message_id'), booking, result_label)
-        send_customer_booking_status_notification(booking)
+        logger.info('Telegram owner approved booking %s as %s.', booking.pk, result_label)
+        try:
+            send_customer_booking_status_notification(booking)
+        except Exception:
+            logger.exception('Could not notify the customer for booking %s.', booking.pk)
         return Response({'ok': True})
 
     def _handle_customer_start(self, message):
