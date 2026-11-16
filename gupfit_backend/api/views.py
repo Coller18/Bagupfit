@@ -16,12 +16,15 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
 
 from .models import Availability, Barber, Booking, CustomerTelegramConnection, HaircutWork
 from .authentication import SupabaseAuthAuthentication
+from .haircut_ai import HaircutSuggestionError, suggest_haircuts_from_photo
 from .permissions import AdminModelPermissions, IsSubAdminOrSuperuser
 from .serializers import (
     AdminBookingSerializer,
@@ -247,6 +250,53 @@ class CustomerBookingCreateView(generics.CreateAPIView):
             lambda booking=booking: send_new_booking_notification(booking),
             robust=True,
         )
+
+
+class HaircutSuggestionView(APIView):
+    authentication_classes = [SupabaseAuthAuthentication]
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'haircut_suggestion'
+
+    def post(self, request):
+        if not os.environ.get('OPENAI_API_KEY', '').strip():
+            return Response(
+                {'detail': 'Photo suggestions are not configured yet.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        photo = request.FILES.get('photo')
+        if not photo:
+            return Response({'detail': 'Choose a clear photo first.'}, status=status.HTTP_400_BAD_REQUEST)
+        if photo.size > 5 * 1024 * 1024:
+            return Response({'detail': 'The photo must be 5 MB or smaller.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        image_bytes = photo.read()
+        if image_bytes.startswith(b'\xff\xd8\xff'):
+            image_type = 'image/jpeg'
+        elif image_bytes.startswith(b'\x89PNG\r\n\x1a\n'):
+            image_type = 'image/png'
+        elif image_bytes.startswith(b'RIFF') and image_bytes[8:12] == b'WEBP':
+            image_type = 'image/webp'
+        else:
+            return Response(
+                {'detail': 'Upload a JPEG, PNG, or WebP photo.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        style_goals = {
+            'classic': 'a clean, classic look',
+            'textured': 'a modern, textured look',
+            'low-maintenance': 'a low-maintenance look that is easy to style',
+            'change': 'a noticeable but wearable change',
+        }
+        goal = style_goals.get(request.data.get('style_goal', 'classic'), style_goals['classic'])
+        try:
+            suggestion = suggest_haircuts_from_photo(image_bytes, image_type, goal)
+        except HaircutSuggestionError as error:
+            return Response({'detail': str(error)}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({'suggestion': suggestion})
 
 
 class TelegramBookingWebhookView(APIView):

@@ -16,6 +16,12 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_RATES': {
+        'haircut_suggestion': '5/hour',
+    },
+}
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -25,6 +31,7 @@ LOGGING = {
     'loggers': {
         'api.views': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
         'api.telegram': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
+        'api.haircut_ai': {'handlers': ['console'], 'level': 'INFO', 'propagate': False},
     },
 }
 

@@ -31,6 +31,14 @@ export default function BookingPage() {
   const [submittedBooking, setSubmittedBooking] = useState(null)
   const [telegramLinkUrl, setTelegramLinkUrl] = useState('')
   const [telegramConnected, setTelegramConnected] = useState(false)
+  const [styleFinderOpen, setStyleFinderOpen] = useState(false)
+  const [stylePhoto, setStylePhoto] = useState(null)
+  const [stylePhotoPreview, setStylePhotoPreview] = useState('')
+  const [stylePhotoConsent, setStylePhotoConsent] = useState(false)
+  const [styleGoal, setStyleGoal] = useState('classic')
+  const [styleSuggestion, setStyleSuggestion] = useState('')
+  const [styleSuggestionError, setStyleSuggestionError] = useState('')
+  const [styleSuggestionLoading, setStyleSuggestionLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [paymentReceipt, setPaymentReceipt] = useState(null)
   const [form, setForm] = useState({ barber: '', date: '', availability: '' })
@@ -54,6 +62,16 @@ export default function BookingPage() {
   }, [])
 
   useEffect(() => { loadPublicData() }, [loadPublicData])
+
+  useEffect(() => {
+    if (!stylePhoto) {
+      setStylePhotoPreview('')
+      return undefined
+    }
+    const previewUrl = URL.createObjectURL(stylePhoto)
+    setStylePhotoPreview(previewUrl)
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [stylePhoto])
 
   useEffect(() => {
     if (!supabase) {
@@ -140,6 +158,53 @@ export default function BookingPage() {
     setPaymentReceipt(file)
   }
 
+  function selectStylePhoto(event) {
+    const photo = event.target.files?.[0]
+    if (!photo) return
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(photo.type)) {
+      setStyleSuggestionError('Choose a JPEG, PNG, or WebP photo.')
+      setStylePhoto(null)
+      setStylePhotoConsent(false)
+      event.target.value = ''
+      return
+    }
+    if (photo.size > 5 * 1024 * 1024) {
+      setStyleSuggestionError('Your photo must be 5 MB or smaller.')
+      setStylePhoto(null)
+      setStylePhotoConsent(false)
+      event.target.value = ''
+      return
+    }
+    setStyleSuggestionError('')
+    setStyleSuggestion('')
+    setStylePhotoConsent(false)
+    setStylePhoto(photo)
+    event.target.value = ''
+  }
+
+  async function requestStyleSuggestion(event) {
+    event?.preventDefault()
+    if (!stylePhoto || !stylePhotoConsent) return
+    setStyleSuggestionLoading(true)
+    setStyleSuggestionError('')
+    setStyleSuggestion('')
+    try {
+      const data = new FormData()
+      data.append('photo', stylePhoto)
+      data.append('style_goal', styleGoal)
+      const result = await apiRequest('/api/haircut-suggestion/', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: data,
+      })
+      setStyleSuggestion(result.suggestion || 'We could not read a suggestion from that photo. Try another clear photo.')
+    } catch (error) {
+      setStyleSuggestionError(error.message || 'Could not create a haircut suggestion. Please try again.')
+    } finally {
+      setStyleSuggestionLoading(false)
+    }
+  }
+
   async function submitBooking(event) {
     event?.preventDefault()
     setSubmitting(true)
@@ -168,6 +233,10 @@ export default function BookingPage() {
       })
       setTelegramLinkUrl(result.telegram_link_url || '')
       setTelegramConnected(Boolean(result.telegram_connected))
+      setStylePhoto(null)
+      setStylePhotoConsent(false)
+      setStyleSuggestion('')
+      setStyleFinderOpen(false)
       setPaymentReceipt(null)
       setForm({ barber: '', date: '', availability: '' })
       setBookingStep(1)
@@ -207,6 +276,25 @@ export default function BookingPage() {
             <>
               <div className="form-title customer-account-heading"><span className="form-title-icon">{session.user.user_metadata?.full_name?.charAt(0)?.toUpperCase() || 'G'}</span><div><span className="team-kicker">SIGNED IN</span><h3>{session.user.user_metadata?.full_name || session.user.email}</h3><small>{session.user.email}</small></div><button className="text-button" onClick={signOutCustomer} type="button">Sign out</button></div>
               {bookingError && <p className="form-message form-message-error" role="alert">{bookingError}</p>}
+              {!success && <section className={`style-finder${styleFinderOpen ? ' style-finder-open' : ''}`} aria-labelledby="style-finder-title">
+                <div className="style-finder-intro">
+                  <span className="style-finder-spark" aria-hidden="true">✦</span>
+                  <div><p className="eyebrow">PERSONAL STYLE GUIDE</p><h2 id="style-finder-title">Not sure what cut to get?</h2><p>Get a few haircut ideas based on a photo and the look you want.</p></div>
+                  <button className="style-finder-toggle" onClick={() => { setStyleFinderOpen((open) => !open); setStyleSuggestionError('') }} type="button">{styleFinderOpen ? 'Close' : 'Get a suggestion'} <span aria-hidden="true">{styleFinderOpen ? '−' : '→'}</span></button>
+                </div>
+                {styleFinderOpen && <form className="style-finder-form" onSubmit={requestStyleSuggestion}>
+                  <div className="style-finder-controls">
+                    <label className="style-photo-picker">Your photo<input accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" onChange={selectStylePhoto} type="file" /><small>Clear front view with your hair visible · JPEG, PNG or WebP · Up to 5 MB</small></label>
+                    {stylePhotoPreview && <div className="style-photo-preview"><img src={stylePhotoPreview} alt="Preview of your hairstyle photo" /><button onClick={() => { setStylePhoto(null); setStylePhotoConsent(false); setStyleSuggestion('') }} type="button">Remove photo</button></div>}
+                    <label className="style-goal-picker">What kind of look do you want?<select value={styleGoal} onChange={(event) => setStyleGoal(event.target.value)}><option value="classic">Clean and classic</option><option value="textured">Modern and textured</option><option value="low-maintenance">Low maintenance</option><option value="change">A noticeable change</option></select></label>
+                  </div>
+                  <label className="style-photo-consent"><input checked={stylePhotoConsent} onChange={(event) => setStylePhotoConsent(event.target.checked)} type="checkbox" /><span>I agree to send this photo to OpenAI to generate haircut ideas. Gupfit won’t save the photo.</span></label>
+                  <p className="style-photo-privacy">Only upload your own photo. The suggestions are ideas; your barber can confirm what will work for your hair.</p>
+                  {styleSuggestionError && <p className="style-suggestion-error" role="alert">{styleSuggestionError}</p>}
+                  <button className="style-suggestion-submit" disabled={!stylePhoto || !stylePhotoConsent || styleSuggestionLoading} type="submit">{styleSuggestionLoading ? <><span className="style-suggestion-spinner" aria-hidden="true" /> Looking at your photo…</> : 'Suggest a haircut'} <span aria-hidden="true">&#8594;</span></button>
+                  {styleSuggestion && <div className="style-suggestion-result" aria-live="polite"><div className="style-suggestion-result-heading"><span className="style-result-spark" aria-hidden="true">✦</span><div><p className="eyebrow">YOUR STYLE IDEAS</p><h3>A few cuts to consider</h3></div></div><p>{styleSuggestion}</p></div>}
+                </form>}
+              </section>}
               {success ? <BookingSubmittedPanel booking={submittedBooking} telegramLinkUrl={telegramLinkUrl} telegramConnected={telegramConnected} onBookAnother={startAnotherBooking} /> : loading ? <p className="info-panel">Loading available times...</p> : availableBarbers.length === 0 ? <p className="info-panel">No appointment times are available yet.</p> : (
                 <div className="booking-wizard">
                   <ol className="booking-progress" aria-label="Booking progress">
