@@ -20,21 +20,18 @@ def send_new_booking_notification(booking):
     try:
         availability = booking.availability
         barber = availability.barber
-        message = '\n'.join([
-            'New Gupfit booking (pending review)',
-            f"Customer: {booking.customer_name}",
-            f"Phone: {booking.customer_phone or 'Not provided'}",
-            f"Email: {booking.customer_email}",
-            f'Barber: {barber.name}',
-            f"Date: {availability.date:%d %b %Y}",
-            f"Time: {availability.start_time:%H:%M}–{availability.end_time:%H:%M}",
-        ])
+        message = format_booking_caption(booking)
         boundary = 'GupfitTelegramBoundary7MA4YWxkTrZu0gW'
         filename = Path(booking.payment_receipt.name).name.replace('"', '') or f'booking-{booking.pk}-receipt'
         content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        keyboard = json.dumps({'inline_keyboard': [[
+            {'text': 'Approve', 'callback_data': f'booking:{booking.pk}:approve'},
+            {'text': 'Reject', 'callback_data': f'booking:{booking.pk}:reject'},
+        ]]})
         parts = [
             _multipart_field(boundary, 'chat_id', chat_id),
             _multipart_field(boundary, 'caption', message),
+            _multipart_field(boundary, 'reply_markup', keyboard),
         ]
         with booking.payment_receipt.open('rb') as receipt:
             receipt_bytes = receipt.read()
@@ -58,9 +55,60 @@ def send_new_booking_notification(booking):
         logger.exception('Could not send Telegram notification for booking %s', booking.pk)
 
 
+def format_booking_caption(booking, status_label='pending review'):
+    availability = booking.availability
+    barber = availability.barber
+    return '\n'.join([
+        f'Gupfit booking ({status_label})',
+        f"Customer: {booking.customer_name}",
+        f"Phone: {booking.customer_phone or 'Not provided'}",
+        f"Email: {booking.customer_email}",
+        f'Barber: {barber.name}',
+        f"Date: {availability.date:%d %b %Y}",
+        f"Time: {availability.start_time:%H:%M}–{availability.end_time:%H:%M}",
+    ])
+
+
 def _multipart_field(boundary, name, value):
     return (
         f'--{boundary}\r\n'
         f'Content-Disposition: form-data; name="{name}"\r\n\r\n'
         f'{value}\r\n'
     ).encode('utf-8')
+
+
+def answer_callback_query(callback_query_id, text):
+    return _telegram_json('answerCallbackQuery', {
+        'callback_query_id': callback_query_id,
+        'text': text,
+    })
+
+
+def update_booking_message(chat_id, message_id, booking, status_label):
+    return _telegram_json('editMessageCaption', {
+        'chat_id': chat_id,
+        'message_id': message_id,
+        'caption': format_booking_caption(booking, status_label),
+        'reply_markup': {'inline_keyboard': []},
+    })
+
+
+def _telegram_json(method, payload):
+    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
+    if not bot_token:
+        return False
+    try:
+        request = Request(
+            f'https://api.telegram.org/bot{bot_token}/{method}',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST',
+        )
+        with urlopen(request, timeout=5) as response:
+            result = json.loads(response.read().decode('utf-8'))
+        if not result.get('ok'):
+            logger.warning('Telegram %s failed: %s', method, result.get('description'))
+        return bool(result.get('ok'))
+    except (URLError, TimeoutError, ValueError, OSError):
+        logger.exception('Telegram %s request failed', method)
+        return False

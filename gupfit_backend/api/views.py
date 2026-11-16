@@ -1,4 +1,6 @@
 from django.contrib.auth import authenticate
+import hmac
+import os
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -26,7 +28,11 @@ from .serializers import (
     CustomerBookingSerializer,
     HaircutWorkSerializer,
 )
-from .telegram import send_new_booking_notification
+from .telegram import (
+    answer_callback_query,
+    send_new_booking_notification,
+    update_booking_message,
+)
 
 
 class SubAdminLoginView(APIView):
@@ -202,6 +208,53 @@ class CustomerBookingCreateView(generics.CreateAPIView):
             lambda booking=booking: send_new_booking_notification(booking),
             robust=True,
         )
+
+
+class TelegramBookingWebhookView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        expected_secret = os.environ.get('TELEGRAM_WEBHOOK_SECRET', '').strip()
+        supplied_secret = request.headers.get('X-Telegram-Bot-Api-Secret-Token', '')
+        if not expected_secret or not hmac.compare_digest(supplied_secret, expected_secret):
+            return Response({'detail': 'Invalid webhook secret.'}, status=status.HTTP_403_FORBIDDEN)
+
+        callback = request.data.get('callback_query') or {}
+        callback_id = callback.get('id')
+        message = callback.get('message') or {}
+        chat_id = str((message.get('chat') or {}).get('id', ''))
+        user_id = str((callback.get('from') or {}).get('id', ''))
+        allowed_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
+        if not callback_id or chat_id != allowed_chat_id or user_id != allowed_chat_id:
+            return Response({'detail': 'Unauthorized Telegram chat.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            prefix, booking_id, action = str(callback.get('data', '')).split(':')
+            if prefix != 'booking' or action not in {'approve', 'reject'}:
+                raise ValueError
+            booking_id = int(booking_id)
+        except (TypeError, ValueError):
+            answer_callback_query(callback_id, 'This booking action is invalid.')
+            return Response({'ok': True})
+
+        next_status = Booking.Status.CONFIRMED if action == 'approve' else Booking.Status.CANCELLED
+        with transaction.atomic():
+            booking = Booking.objects.select_for_update().filter(pk=booking_id).first()
+            if booking and booking.status == Booking.Status.PENDING_REVIEW:
+                booking.status = next_status
+                booking.save(update_fields=['status'])
+            else:
+                booking = None
+
+        if not booking:
+            answer_callback_query(callback_id, 'This booking was already reviewed or no longer exists.')
+            return Response({'ok': True})
+
+        result_label = 'confirmed' if next_status == Booking.Status.CONFIRMED else 'cancelled'
+        answer_callback_query(callback_id, f'Booking {result_label}.')
+        update_booking_message(chat_id, message.get('message_id'), booking, result_label)
+        return Response({'ok': True})
 
 
 class CustomerBookingHistoryView(generics.ListAPIView):

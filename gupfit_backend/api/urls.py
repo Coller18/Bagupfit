@@ -17,6 +17,7 @@ from .views import (
     PublicHaircutWorkListView,
     SubAdminLoginView,
     SubAdminLogoutView,
+    TelegramBookingWebhookView,
 )
 
 urlpatterns = [
@@ -36,5 +37,6 @@ urlpatterns = [
     path('admin/bookings/<int:pk>/receipt/', AdminBookingReceiptView.as_view(), name='admin-booking-receipt'),
     path('availability/', PublicAvailabilityListView.as_view(), name='public-availability-list'),
     path('bookings/', CustomerBookingCreateView.as_view(), name='customer-booking-create'),
+    path('telegram/webhook/', TelegramBookingWebhookView.as_view(), name='telegram-booking-webhook'),
     path('my/bookings/', CustomerBookingHistoryView.as_view(), name='customer-booking-history'),
 ]
