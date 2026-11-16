@@ -522,13 +522,12 @@ body,
 .team-carousel-caption h3 { margin: 0; color: #f5f5f5; font-family: "Instrument Serif", Georgia, serif; font-size: clamp(44px, 6vw, 76px); font-weight: 400; letter-spacing: -0.02em; line-height: .95; }
 .team-carousel-caption p { max-width: 440px; margin: 4px 0 0; color: #aaa; font-size: 13px; line-height: 1.7; }
 .work-gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); }
-.work-gallery-card { position: relative; min-width: 0; aspect-ratio: 4 / 5; overflow: hidden; background: #171717; }
-.work-gallery-card::after { position: absolute; inset: 45% 0 0; background: linear-gradient(0deg, rgb(0 0 0 / 84%), transparent); content: ''; pointer-events: none; }
-.work-gallery-card img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform 500ms cubic-bezier(.2,.7,.2,1); }
-.work-gallery-card:hover img { transform: scale(1.035); }
-.work-gallery-copy { position: absolute; z-index: 1; right: 0; bottom: 0; left: 0; padding: clamp(14px, 2vw, 24px); }
-.work-gallery-copy h3 { margin: 0; color: #fff; font-family: "Instrument Serif", Georgia, serif; font-size: clamp(22px, 2.6vw, 36px); font-weight: 400; }
-.work-gallery-copy p { margin: 6px 0 0; color: #ccc; font-size: 11px; line-height: 1.5; }
+.work-gallery-card { position: relative; min-width: 0; aspect-ratio: 4 / 5; overflow: hidden; background: #171717; isolation: isolate; }
+.work-gallery-card .featured-work-decay-card { position: absolute; z-index: 0; inset: 0; width: 100% !important; height: 100% !important; }
+.work-gallery-card .featured-work-decay-card::after { position: absolute; z-index: 1; inset: 45% 0 0; background: linear-gradient(0deg, rgb(0 0 0 / 84%), transparent); content: ''; pointer-events: none; }
+.work-gallery-card .decay-card__content { z-index: 2; right: 0; bottom: 0; left: 0; padding: clamp(14px, 2vw, 24px); }
+.work-gallery-card .decay-card__content h3 { margin: 0; color: #fff; font-family: "Instrument Serif", Georgia, serif; font-size: clamp(22px, 2.6vw, 36px); font-weight: 400; }
+.work-gallery-card .decay-card__content p { margin: 6px 0 0; color: #ccc; font-size: 11px; line-height: 1.5; }
 .featured-work-link { color: #bbb; text-decoration: none; }
 .featured-work-link:hover { color: #fff; }
 .featured-work-link span { margin-left: 6px; }
@@ -577,9 +576,8 @@ body,
 @media (max-width: 600px) {
   .team-section .section-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
   .work-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .work-gallery-card { aspect-ratio: 3 / 4; }
-  .work-gallery-copy { padding: 11px; }
-  .work-gallery-copy h3 { font-size: 22px; }
+  .work-gallery-card .decay-card__content { padding: 11px; }
+  .work-gallery-card .decay-card__content h3 { font-size: 22px; }
   .works-page .site-header { width: calc(100% - 36px); }
   .works-page .site-nav { gap: 14px; }
   .works-page .site-nav a { font-size: 10px; }

@@ -4,6 +4,7 @@ import brandLogo from './logo-white.png'
 import heroVideo from './hero.mp4'
 import ScrollStack, { ScrollStackItem } from './ScrollStack.jsx'
 import SiteFooter from './SiteFooter.jsx'
+import DecayCard from './DecayCard.jsx'
 import { supabase } from './supabase.js'
 import './App.css'
 
@@ -128,11 +129,29 @@ export default function App() {
         {!loading && !error && works.length === 0 && <p className="info-panel">Featured haircut photos will appear here soon.</p>}
         {!loading && !error && works.length > 0 && <div className="work-gallery">
           {works.map((work, index) => <article className="work-gallery-card" key={work.id}>
-            <img src={work.image_url} alt={work.title ? `${work.title} haircut` : `Gupfit haircut ${index + 1}`} loading="eager" decoding="async" />
-            {(work.title || work.description) && <div className="work-gallery-copy">
+            <DecayCard
+              alt={work.title ? `${work.title} haircut` : `Gupfit haircut ${index + 1}`}
+              className="featured-work-decay-card"
+              detail={5}
+              flow={0}
+              grain={0.25}
+              height={400}
+              hoverDecay={0.05}
+              idle={0.35}
+              image={work.image_url}
+              intensity={0.5}
+              pattern={index + 4}
+              radius={0}
+              recovery={0.6}
+              scope="card"
+              sensitivity={0.5}
+              tilt={10}
+              travel={50}
+              width={300}
+            >
               {work.title && <h3>{work.title}</h3>}
               {work.description && <p>{work.description}</p>}
-            </div>}
+            </DecayCard>
           </article>)}
         </div>}
       </section>
