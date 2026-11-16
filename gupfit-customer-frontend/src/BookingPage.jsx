@@ -210,7 +210,7 @@ export default function BookingPage() {
               {success ? <BookingSubmittedPanel booking={submittedBooking} telegramLinkUrl={telegramLinkUrl} telegramConnected={telegramConnected} onBookAnother={startAnotherBooking} /> : loading ? <p className="info-panel">Loading available times...</p> : availableBarbers.length === 0 ? <p className="info-panel">No appointment times are available yet.</p> : (
                 <div className="booking-wizard">
                   <ol className="booking-progress" aria-label="Booking progress">
-                    {['Barber', 'Date', 'Time', 'Confirm'].map((label, index) => <li className={bookingStep === index + 1 ? 'booking-progress-current' : bookingStep > index + 1 ? 'booking-progress-complete' : ''} key={label}><span>{bookingStep > index + 1 ? '✓' : `0${index + 1}`}</span><small>{label}</small></li>)}
+                    {['Barber', 'Date', 'Time', 'Confirm'].map((label, index) => <li className={bookingStep === index + 1 ? 'booking-progress-current' : bookingStep > index + 1 ? 'booking-progress-complete' : ''} key={label}><span>{bookingStep > index + 1 ? <CheckIcon /> : `0${index + 1}`}</span><small>{label}</small></li>)}
                   </ol>
 
                   {bookingStep === 1 && <section className="wizard-step" aria-labelledby="wizard-barber-title">
@@ -221,7 +221,7 @@ export default function BookingPage() {
                         return <button aria-pressed={selected} className={`barber-choice${selected ? ' barber-choice-selected' : ''}`} key={barber.id} onClick={() => chooseBarber(String(barber.id))} type="button">
                           {barber.photo_url ? <img src={barber.photo_url} alt="" /> : <span className="barber-choice-placeholder">{barber.name.charAt(0).toUpperCase()}</span>}
                           <span className="barber-choice-copy"><strong>{barber.name}</strong><small>{selected ? 'Selected' : 'Choose barber'}</small></span>
-                          <span className="barber-choice-mark" aria-hidden="true">{selected ? '✓' : '+'}</span>
+                          <span className="barber-choice-mark" aria-hidden="true">{selected ? <CheckIcon /> : <PlusIcon />}</span>
                         </button>
                       })}
                     </div>
@@ -298,7 +298,7 @@ function BookingSubmittedPanel({ booking, telegramLinkUrl, telegramConnected, on
   return (
     <section className="booking-submitted-panel" aria-labelledby="booking-submitted-title" role="status">
       <div className="booking-submitted-heading">
-        <span className="booking-submitted-check" aria-hidden="true">&#10003;</span>
+        <span className="booking-submitted-check" aria-hidden="true"><CheckIcon /></span>
         <p className="eyebrow">RECEIPT RECEIVED</p>
         <h1 id="booking-submitted-title">Your booking is in.</h1>
         <p>Your payment receipt has been sent to the shop. Your appointment is held while the team reviews it.</p>
@@ -310,7 +310,7 @@ function BookingSubmittedPanel({ booking, telegramLinkUrl, telegramConnected, on
           <div><span>BARBER</span><strong>{booking?.barberName || 'Your barber'}</strong></div>
           <div><span>DATE &amp; TIME</span><strong>{booking?.date ? displayDate(booking.date) : 'Selected appointment'}{booking?.startTime ? ` · ${booking.startTime.slice(0, 5)}${booking?.endTime ? `–${booking.endTime.slice(0, 5)}` : ''}` : ''}</strong></div>
         </div>
-        <div className="booking-submitted-receipt"><span className="booking-submitted-receipt-check" aria-hidden="true">&#10003;</span><div><strong>{booking?.receiptName || 'Payment receipt'}</strong><small>Uploaded successfully · awaiting review</small></div></div>
+        <div className="booking-submitted-receipt"><span className="booking-submitted-receipt-check" aria-hidden="true"><CheckIcon /></span><div><strong>{booking?.receiptName || 'Payment receipt'}</strong><small>Uploaded successfully · awaiting review</small></div></div>
         <div className="booking-submitted-status"><span className="booking-submitted-status-dot" /><span>Payment review</span><strong>In progress</strong></div>
       </div>
 
@@ -331,7 +331,7 @@ function BookingSubmittedPanel({ booking, telegramLinkUrl, telegramConnected, on
             <span>Connect Telegram</span><span aria-hidden="true">&#8594;</span>
           </a>
         ) : telegramConnected ? (
-          <span className="telegram-connected-badge"><span aria-hidden="true">&#10003;</span> Connected</span>
+          <span className="telegram-connected-badge"><span aria-hidden="true"><CheckIcon /></span> Connected</span>
         ) : (
           <span className="telegram-unavailable-note">Check status in My bookings</span>
         )}
@@ -345,4 +345,12 @@ function BookingSubmittedPanel({ booking, telegramLinkUrl, telegramConnected, on
       </div>
     </section>
   )
+}
+
+function CheckIcon() {
+  return <svg className="ui-check-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7" /></svg>
+}
+
+function PlusIcon() {
+  return <svg className="ui-plus-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
 }

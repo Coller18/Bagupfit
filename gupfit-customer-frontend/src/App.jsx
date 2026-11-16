@@ -111,7 +111,7 @@ export default function App() {
             <a className="hero-brand" href="/" aria-label="Gupfit home">
               <img className="hero-logo" src={brandLogo} alt="Gupfit" />
             </a>
-            <h1>Reserve and Respect<br /><span>Time.</span></h1>
+            <h1 className="hero-tagline">Book your time.<br /><span>Be on time.</span></h1>
             <a className="primary-link" href="/account?mode=login&next=%2Fbooking">Book an appointment</a>
           </div>
         </div>
