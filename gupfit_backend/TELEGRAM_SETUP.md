@@ -12,4 +12,4 @@ The backend can send a Telegram message after a customer booking is successfully
    - `TELEGRAM_CHAT_ID` — your Telegram chat ID
 5. Save the changes and redeploy/restart the service.
 
-Each new booking produces a message with the customer and appointment details and a pending-review status. The notification is sent after the database transaction commits, so a failed booking will not trigger an alert. A Telegram delivery problem is logged and does not undo or reject a booking.
+Each new booking produces a Telegram document message with the uploaded receipt and a caption containing the customer and appointment details and pending-review status. The notification is sent after the database transaction commits, so a failed booking will not trigger an alert. A Telegram delivery problem is logged and does not undo or reject a booking. Telegram will receive and process the receipt and booking details, so enable this only if that matches your privacy practices.

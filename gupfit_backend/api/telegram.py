@@ -1,6 +1,8 @@
 import json
 import logging
+import mimetypes
 import os
+from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -27,15 +29,38 @@ def send_new_booking_notification(booking):
             f"Date: {availability.date:%d %b %Y}",
             f"Time: {availability.start_time:%H:%M}–{availability.end_time:%H:%M}",
         ])
+        boundary = 'GupfitTelegramBoundary7MA4YWxkTrZu0gW'
+        filename = Path(booking.payment_receipt.name).name.replace('"', '') or f'booking-{booking.pk}-receipt'
+        content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        parts = [
+            _multipart_field(boundary, 'chat_id', chat_id),
+            _multipart_field(boundary, 'caption', message),
+        ]
+        with booking.payment_receipt.open('rb') as receipt:
+            receipt_bytes = receipt.read()
+        document_header = (
+            f'--{boundary}\r\n'
+            f'Content-Disposition: form-data; name="document"; filename="{filename}"\r\n'
+            f'Content-Type: {content_type}\r\n\r\n'
+        ).encode('utf-8')
+        parts.append(document_header + receipt_bytes + f'\r\n--{boundary}--\r\n'.encode('utf-8'))
         request = Request(
-            f'https://api.telegram.org/bot{bot_token}/sendMessage',
-            data=json.dumps({'chat_id': chat_id, 'text': message}).encode('utf-8'),
-            headers={'Content-Type': 'application/json'},
+            f'https://api.telegram.org/bot{bot_token}/sendDocument',
+            data=b''.join(parts),
+            headers={'Content-Type': f'multipart/form-data; boundary={boundary}'},
             method='POST',
         )
-        with urlopen(request, timeout=5) as response:
+        with urlopen(request, timeout=15) as response:
             result = json.loads(response.read().decode('utf-8'))
         if not result.get('ok'):
             logger.warning('Telegram rejected a new booking notification: %s', result.get('description'))
     except (URLError, TimeoutError, ValueError, OSError):
         logger.exception('Could not send Telegram notification for booking %s', booking.pk)
+
+
+def _multipart_field(boundary, name, value):
+    return (
+        f'--{boundary}\r\n'
+        f'Content-Disposition: form-data; name="{name}"\r\n\r\n'
+        f'{value}\r\n'
+    ).encode('utf-8')
