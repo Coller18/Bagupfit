@@ -12,7 +12,6 @@ from .views import (
     BarberPhotoView,
     CustomerBookingCreateView,
     CustomerBookingHistoryView,
-    HaircutSuggestionView,
     PublicAvailabilityListView,
     PublicFeaturedHaircutWorkListView,
     PublicHaircutWorkListView,
@@ -38,7 +37,6 @@ urlpatterns = [
     path('admin/bookings/<int:pk>/receipt/', AdminBookingReceiptView.as_view(), name='admin-booking-receipt'),
     path('availability/', PublicAvailabilityListView.as_view(), name='public-availability-list'),
     path('bookings/', CustomerBookingCreateView.as_view(), name='customer-booking-create'),
-    path('haircut-suggestion/', HaircutSuggestionView.as_view(), name='haircut-photo-suggestion'),
     path('telegram/webhook/', TelegramBookingWebhookView.as_view(), name='telegram-booking-webhook'),
     path('my/bookings/', CustomerBookingHistoryView.as_view(), name='customer-booking-history'),
 ]
