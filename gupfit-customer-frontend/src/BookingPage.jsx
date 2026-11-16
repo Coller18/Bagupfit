@@ -4,6 +4,7 @@ import brandLogo from './logo-white.png'
 import paymentQr from './qrcode.jpg'
 import { supabase } from './supabase.js'
 import SiteFooter from './SiteFooter.jsx'
+import CustomerNav from './CustomerNav.jsx'
 import './App.css'
 
 const dateKey = (date) => {
@@ -189,7 +190,7 @@ export default function BookingPage() {
     <main className="booking-page">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Gupfit home"><img className="site-logo" src={brandLogo} alt="Gupfit" /></a>
-        <nav className="site-nav" aria-label="Main navigation"><a href="/works">All haircuts</a>{session && <><a href="/my-bookings">My bookings</a><a href="/account-settings">Account settings</a></>}<a className="nav-cta" href="/booking">Book a time</a></nav>
+        <CustomerNav session={session} showLogin active="appointment" />
       </header>
 
       <section className="booking-page-content booking-page-content-wizard" id="appointment">

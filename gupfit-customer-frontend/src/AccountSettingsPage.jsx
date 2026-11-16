@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import brandLogo from './logo-white.png'
 import { supabase } from './supabase.js'
 import SiteFooter from './SiteFooter.jsx'
+import CustomerNav from './CustomerNav.jsx'
 import './App.css'
 
 function normalizePhilippinePhone(value) {
@@ -87,12 +88,12 @@ export default function AccountSettingsPage() {
     <main className="booking-page account-settings-page">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Gupfit home"><img className="site-logo" src={brandLogo} alt="Gupfit" /></a>
-        <nav className="site-nav" aria-label="Main navigation"><a href="/my-bookings">My bookings</a><a className="nav-cta" href="/booking">Book a time</a></nav>
+        <CustomerNav session={session} showLogin active="profile" />
       </header>
       <section className="booking-page-heading">
         <a className="back-link" href="/my-bookings">&#8592; Back to my bookings</a>
         <p className="eyebrow">YOUR GUPFIT ACCOUNT</p>
-        <h1>Account settings.</h1>
+        <h1>Your profile.</h1>
         <p>Manage the details used for your bookings.</p>
       </section>
       <section className="account-settings-content" aria-labelledby="account-settings-title">

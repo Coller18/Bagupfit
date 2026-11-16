@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import brandLogo from './logo-white.png'
+import heroVideo from './hero.mp4'
 import { supabase } from './supabase.js'
 import './App.css'
 
@@ -16,8 +17,28 @@ function normalizePhilippinePhone(value) {
   return ''
 }
 
+function PasswordField({ label = 'Password', value, onChange, autoComplete, minLength = 8 }) {
+  const [visible, setVisible] = useState(false)
+  return (
+    <label className="password-field">{label}
+      <span className="password-field-control">
+        <input autoComplete={autoComplete} minLength={minLength} onChange={onChange} required type={visible ? 'text' : 'password'} value={value} />
+        <button aria-label={visible ? 'Hide password' : 'Show password'} aria-pressed={visible} className="password-visibility-toggle" onClick={() => setVisible((current) => !current)} type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
+            <path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z" />
+            <circle cx="12" cy="12" r="2.5" />
+            {!visible && <path d="m4 4 16 16" />}
+          </svg>
+          <span>{visible ? 'Hide' : 'Show'}</span>
+        </button>
+      </span>
+    </label>
+  )
+}
+
 export default function AccountPage() {
-  const [authMode, setAuthMode] = useState(() => new URLSearchParams(window.location.search).get('mode') === 'login' ? 'signin' : 'signup')
+  const [authMode, setAuthMode] = useState(() => ['login', 'recovery'].includes(new URLSearchParams(window.location.search).get('mode')) ? 'signin' : 'signup')
+  const [passwordRecovery, setPasswordRecovery] = useState(() => new URLSearchParams(window.location.search).get('mode') === 'recovery')
   const [authForm, setAuthForm] = useState({ full_name: '', phone: '', email: '', password: '' })
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [session, setSession] = useState(null)
@@ -41,7 +62,8 @@ export default function AccountPage() {
       setSession(data.session)
       setAuthLoading(false)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
       setSession(nextSession)
       setAuthLoading(false)
     })
@@ -49,7 +71,7 @@ export default function AccountPage() {
   }, [])
 
   useEffect(() => {
-    if (authLoading || !session) return
+    if (authLoading || !session || passwordRecovery) return
 
     let draft = null
     try {
@@ -80,7 +102,7 @@ export default function AccountPage() {
     }
     sessionStorage.removeItem(GOOGLE_PROFILE_DRAFT_KEY)
     window.location.replace(nextPath)
-  }, [authLoading, session])
+  }, [authLoading, session, passwordRecovery])
 
   async function submitAuth(event) {
     event.preventDefault()
@@ -129,6 +151,53 @@ export default function AccountPage() {
       const { data, error } = await supabase.auth.signInWithPassword({ email: authForm.email, password: authForm.password })
       if (error) setAuthError(error.message)
       else setSession(data.session)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function requestPasswordReset(event) {
+    event.preventDefault()
+    setAuthError('')
+    setAuthMessage('')
+    if (!supabase) {
+      setAuthError('Customer sign-in is not configured. Add the Supabase URL and publishable key to .env.local.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(authForm.email, {
+        redirectTo: `${window.location.origin}/account?mode=recovery`,
+      })
+      if (error) throw error
+      setAuthMessage('If an account exists for that email, a password reset link is on its way.')
+    } catch (error) {
+      setAuthError(error.message || 'Could not send a reset email. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function saveNewPassword(event) {
+    event.preventDefault()
+    setAuthError('')
+    setAuthMessage('')
+    if (authForm.password.length < 8) {
+      setAuthError('Your password must be at least 8 characters long.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: authForm.password })
+      if (error) throw error
+      await supabase.auth.signOut()
+      setSession(null)
+      setPasswordRecovery(false)
+      setAuthMode('signin')
+      setAuthForm((current) => ({ ...current, password: '' }))
+      setAuthMessage('Your password has been updated. Sign in with your new password.')
+    } catch (error) {
+      setAuthError(error.message || 'Could not update your password. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -241,12 +310,26 @@ export default function AccountPage() {
   }
 
   return (
-    <main className={`account-page account-page-standalone account-page-${authMode}`}>
+    <main className={`account-page account-page-standalone account-page-${passwordRecovery ? 'recovery' : authMode}`}>
       <section className="account-auth-shell" aria-label="Customer account">
         <a className="account-auth-brand" href="/" aria-label="Gupfit home"><img src={brandLogo} alt="Gupfit" /></a>
-        <div className="booking-form account-form account-form-standalone">
-          <div className="account-form-heading"><p className="eyebrow">{authMode === 'signup' ? 'JOIN GUPFIT' : 'CUSTOMER LOGIN'}</p><h1>{authMode === 'signup' ? 'Create account' : 'Welcome back'}</h1><p>{authMode === 'signup' ? 'Create an account to book your appointment.' : 'Sign in to continue to your appointment.'}</p></div>
-          {!session && <div className="auth-tabs" role="tablist" aria-label="Account options">
+        <div className={`booking-form account-form account-form-standalone account-auth-card account-auth-card-${passwordRecovery ? 'recovery' : authMode}`}>
+          <aside className="account-auth-showcase" aria-hidden="true">
+            <video className="account-auth-video" autoPlay muted loop playsInline tabIndex={-1}>
+              <source src={heroVideo} type="video/mp4" />
+            </video>
+            <div className="account-auth-showcase-copy" key={passwordRecovery ? 'recovery' : authMode}>
+              <p className="eyebrow">GUPFIT BARBERSHOP</p>
+              <h2>{passwordRecovery ? <>Back to<br /><em>your best.</em></> : authMode === 'signup' ? <>Your next cut<br /><em>starts here.</em></> : <>Your chair<br /><em>is waiting.</em></>}</h2>
+              <p>{passwordRecovery ? 'Secure your account and get back to booking.' : authMode === 'signup' ? 'Create your profile once, then book your barber and time with ease.' : 'Sign in to manage appointments and keep your next visit on track.'}</p>
+              <div className="account-auth-showcase-note"><span aria-hidden="true">&#10022;</span> Make time for yourself.</div>
+            </div>
+            <span className="account-auth-showcase-orbit account-auth-showcase-orbit-one" />
+            <span className="account-auth-showcase-orbit account-auth-showcase-orbit-two" />
+          </aside>
+          <div className="account-auth-content" key={`${passwordRecovery ? 'recovery' : authMode}-${session ? 'session' : 'guest'}`}>
+          <div className="account-form-heading">{(passwordRecovery || authMode !== 'signin') && <p className="eyebrow">{passwordRecovery ? 'ACCOUNT SECURITY' : authMode === 'signup' ? 'JOIN GUPFIT' : 'ACCOUNT RECOVERY'}</p>}<h1>{passwordRecovery ? 'Choose a new password' : authMode === 'signup' ? 'Create account' : authMode === 'forgot' ? 'Reset your password' : 'Welcome back'}</h1><p>{passwordRecovery ? 'Set a new password for your Gupfit account.' : authMode === 'signup' ? 'Create an account to book your appointment.' : authMode === 'forgot' ? 'Enter your email and we’ll send you a secure reset link.' : 'Sign in to continue to your appointment.'}</p></div>
+          {!session && !passwordRecovery && ['signup', 'signin'].includes(authMode) && <div className="auth-tabs" role="tablist" aria-label="Account options">
             <button aria-selected={authMode === 'signup'} className={authMode === 'signup' ? 'auth-tab auth-tab-active' : 'auth-tab'} onClick={() => switchMode('signup')} role="tab" type="button">Create account</button>
             <button aria-selected={authMode === 'signin'} className={authMode === 'signin' ? 'auth-tab auth-tab-active' : 'auth-tab'} onClick={() => switchMode('signin')} role="tab" type="button">Sign in</button>
           </div>}
@@ -262,7 +345,27 @@ export default function AccountPage() {
             </form>
             <button className="wizard-back" disabled={submitting} onClick={signOutFromProfile} type="button">Sign out and use a different account</button>
           </section>}
-          {!authLoading && !session && <>
+          {!authLoading && passwordRecovery && session && <>
+            {authError && <p className="form-message form-message-error" role="alert">{authError}</p>}
+            <form className="customer-auth-form" onSubmit={saveNewPassword}>
+              <PasswordField label="New password" autoComplete="new-password" value={authForm.password} onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })} />
+              <button className="primary-link submit-button" disabled={submitting} type="submit">{submitting ? 'Updating password...' : 'Update password'} <span aria-hidden="true">&#8594;</span></button>
+            </form>
+          </>}
+          {!authLoading && passwordRecovery && !session && <>
+            <p className="form-message" role="status">This reset link may have expired. Request a fresh link to continue.</p>
+            <button className="wizard-back" onClick={() => { setPasswordRecovery(false); switchMode('forgot') }} type="button">Request another reset link</button>
+          </>}
+          {!authLoading && !session && authMode === 'forgot' && <>
+            {authError && <p className="form-message form-message-error" role="alert">{authError}</p>}
+            {authMessage && <p className="form-message form-message-success" role="status">{authMessage}</p>}
+            <form className="customer-auth-form" onSubmit={requestPasswordReset}>
+              <label>Email<input autoComplete="email" required type="email" value={authForm.email} onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })} /></label>
+              <button className="primary-link submit-button" disabled={submitting} type="submit">{submitting ? 'Sending link...' : 'Send reset link'} <span aria-hidden="true">&#8594;</span></button>
+            </form>
+            <button className="wizard-back" disabled={submitting} onClick={() => switchMode('signin')} type="button">Back to sign in</button>
+          </>}
+          {!authLoading && !session && ['signup', 'signin'].includes(authMode) && <>
             {authError && <p className="form-message form-message-error" role="alert">{authError}</p>}
             {authMessage && <p className="form-message form-message-success" role="status">{authMessage}</p>}
             <form className="customer-auth-form" onSubmit={submitAuth}>
@@ -271,7 +374,8 @@ export default function AccountPage() {
                 <label>Philippine mobile number<input autoComplete="tel" inputMode="tel" placeholder="09XXXXXXXXX or +639XXXXXXXXX" required type="tel" value={authForm.phone} onChange={(event) => setAuthForm({ ...authForm, phone: event.target.value })} /><small>Enter a Philippine mobile number starting with 09 or +639.</small></label>
               </>}
               <label>Email<input autoComplete="email" required type="email" value={authForm.email} onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })} /></label>
-              <label>Password<input autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} minLength="8" required type="password" value={authForm.password} onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })} /></label>
+              <PasswordField autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} value={authForm.password} onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })} />
+              {authMode === 'signin' && <button className="auth-forgot-link" onClick={() => switchMode('forgot')} type="button">Forgot password?</button>}
               {authMode === 'signup' && <label className="privacy-consent"><input checked={privacyAccepted} onChange={(event) => setPrivacyAccepted(event.target.checked)} required type="checkbox" /><span>I have read the <a href="/privacy" rel="noreferrer" target="_blank">Privacy Policy</a> and consent to the use of my information for account and booking services.</span></label>}
               <button className="primary-link submit-button" disabled={submitting} type="submit">{submitting ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Sign in'} <span aria-hidden="true">&#8594;</span></button>
             </form>
@@ -282,6 +386,7 @@ export default function AccountPage() {
               <span>{submitting ? 'Connecting...' : 'Continue with Google'}</span>
             </button>
           </>}
+          </div>
         </div>
         <div className="account-auth-links"><a href="/">&#8592; Back to Gupfit</a><a href="/privacy">Privacy policy</a></div>
       </section>

@@ -1,5 +1,6 @@
 import brandLogo from './logo-white.png'
 import SiteFooter from './SiteFooter.jsx'
+import CustomerNav from './CustomerNav.jsx'
 import './App.css'
 
 export default function PrivacyPolicyPage() {
@@ -7,10 +8,7 @@ export default function PrivacyPolicyPage() {
     <main className="privacy-page">
       <header className="site-header privacy-header">
         <a className="brand" href="/" aria-label="Gupfit home"><img className="site-logo" src={brandLogo} alt="Gupfit" /></a>
-        <nav className="site-nav" aria-label="Main navigation">
-          <a href="/">Home</a>
-          <a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Book a time</a>
-        </nav>
+        <CustomerNav showLogin />
       </header>
 
       <article className="privacy-policy-content">

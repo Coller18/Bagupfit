@@ -3,6 +3,7 @@ import { API_BASE_URL, apiRequest } from './api.js'
 import brandLogo from './logo-white.png'
 import FlexCarousel from './FlexCarousel.jsx'
 import SiteFooter from './SiteFooter.jsx'
+import CustomerNav from './CustomerNav.jsx'
 import './App.css'
 
 export default function WorksPage() {
@@ -29,15 +30,12 @@ export default function WorksPage() {
     <main className="works-page">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Gupfit home"><img className="site-logo" src={brandLogo} alt="Gupfit" /></a>
-        <nav className="site-nav" aria-label="Main navigation">
-          <a href="/">Home</a>
-          <a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Book a time</a>
-        </nav>
+        <CustomerNav showLogin active="works" />
       </header>
 
       <section className="works-page-content" aria-labelledby="works-page-title">
         <div className="section-heading">
-          <div><p className="eyebrow">THE GUPFIT PORTFOLIO</p><h1 id="works-page-title">All haircuts.</h1></div>
+          <div><p className="eyebrow">THE GUPFIT PORTFOLIO</p><h1 id="works-page-title">Our work.</h1></div>
           <p className="section-index">THE FULL COLLECTION <span aria-hidden="true">&#183;</span> DRAG OR SCROLL TO EXPLORE</p>
         </div>
         {loading && <p className="info-panel">Loading haircut photos...</p>}

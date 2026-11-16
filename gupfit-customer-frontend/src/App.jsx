@@ -4,6 +4,7 @@ import brandLogo from './logo-white.png'
 import heroVideo from './hero.mp4'
 import ScrollStack, { ScrollStackItem } from './ScrollStack.jsx'
 import SiteFooter from './SiteFooter.jsx'
+import CustomerNav from './CustomerNav.jsx'
 import DecayCard from './DecayCard.jsx'
 import { supabase } from './supabase.js'
 import './App.css'
@@ -63,14 +64,7 @@ export default function App() {
       <ScrollStackItem itemClassName="home-stack-panel home-stack-panel--hero">
       <section className="hero" id="home">
         <header className="site-header">
-          <nav className="site-nav" aria-label="Main navigation">
-            <a href="/works">All haircuts</a>
-            {authResolved && customerSession ? <>
-              <a href="/my-bookings">My bookings</a>
-              <a href="/account-settings">Account settings</a>
-              <a className="nav-cta" href="/booking">Book a time</a>
-            </> : <a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Login</a>}
-          </nav>
+          <CustomerNav session={customerSession} showLogin active="home" />
         </header>
         <video className="hero-video" autoPlay muted loop playsInline aria-hidden="true" tabIndex={-1}>
           <source src={heroVideo} type="video/mp4" />
