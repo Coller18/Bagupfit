@@ -26,6 +26,7 @@ from .serializers import (
     CustomerBookingSerializer,
     HaircutWorkSerializer,
 )
+from .telegram import send_new_booking_notification
 
 
 class SubAdminLoginView(APIView):
@@ -189,13 +190,17 @@ class CustomerBookingCreateView(generics.CreateAPIView):
         full_name = str(self.request.user.user_metadata.get('full_name') or '').strip()
         if not full_name:
             raise ValidationError({'customer_name': 'Add your full name to your customer profile before booking.'})
-        serializer.save(
+        booking = serializer.save(
             availability=slot,
             customer_id=self.request.user.pk,
             customer_name=full_name,
             customer_email=self.request.user.email,
             customer_phone=str(self.request.user.user_metadata.get('phone') or '').strip(),
             status=Booking.Status.PENDING_REVIEW,
+        )
+        transaction.on_commit(
+            lambda booking=booking: send_new_booking_notification(booking),
+            robust=True,
         )
 
 
