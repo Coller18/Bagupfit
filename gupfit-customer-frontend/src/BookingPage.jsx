@@ -105,11 +105,6 @@ export default function BookingPage() {
   const calendarMonthKey = dateKey(calendarMonth).slice(0, 7)
   const lastAvailableMonth = availableDates.at(-1)?.slice(0, 7) || currentMonthKey
 
-  async function signOutCustomer() {
-    await supabase?.auth.signOut()
-    setSession(null)
-  }
-
   function chooseBarber(barberId) {
     setForm({ barber: barberId, date: '', availability: '' })
     setPaymentReceipt(null)
@@ -194,18 +189,13 @@ export default function BookingPage() {
     <main className="booking-page">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Gupfit home"><img className="site-logo" src={brandLogo} alt="Gupfit" /></a>
-        <nav className="site-nav" aria-label="Main navigation"><a href="/works">All haircuts</a>{session && <a href="/my-bookings">My bookings</a>}<a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Book a time</a></nav>
+        <nav className="site-nav" aria-label="Main navigation"><a href="/works">All haircuts</a>{session && <><a href="/my-bookings">My bookings</a><a href="/account-settings">Account settings</a></>}<a className="nav-cta" href="/booking">Book a time</a></nav>
       </header>
-
-      <section className="booking-page-heading booking-page-heading-simple">
-        <a className="back-link" href="/">&#8592; Back to Gupfit</a>
-      </section>
 
       <section className="booking-page-content booking-page-content-wizard" id="appointment">
         <div className={`booking-form${session ? ' booking-form-wizard' : ''}`}>
           {authLoading || !session ? <p className="info-panel">{authLoading ? 'Checking your account...' : 'Opening account sign-in...'}</p> : (
             <>
-              <div className="form-title customer-account-heading"><span className="form-title-icon">{session.user.user_metadata?.full_name?.charAt(0)?.toUpperCase() || 'G'}</span><div><span className="team-kicker">SIGNED IN</span><h3>{session.user.user_metadata?.full_name || session.user.email}</h3><small>{session.user.email}</small></div><button className="text-button" onClick={signOutCustomer} type="button">Sign out</button></div>
               {bookingError && <p className="form-message form-message-error" role="alert">{bookingError}</p>}
               {success ? <BookingSubmittedPanel booking={submittedBooking} telegramLinkUrl={telegramLinkUrl} telegramConnected={telegramConnected} onBookAnother={startAnotherBooking} /> : loading ? <p className="info-panel">Loading available times...</p> : availableBarbers.length === 0 ? <p className="info-panel">No appointment times are available yet.</p> : (
                 <div className="booking-wizard">

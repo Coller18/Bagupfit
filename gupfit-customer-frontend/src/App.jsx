@@ -67,6 +67,7 @@ export default function App() {
             <a href="/works">All haircuts</a>
             {authResolved && customerSession ? <>
               <a href="/my-bookings">My bookings</a>
+              <a href="/account-settings">Account settings</a>
               <a className="nav-cta" href="/booking">Book a time</a>
             </> : <a className="nav-cta" href="/account?mode=login&next=%2Fbooking">Login</a>}
           </nav>

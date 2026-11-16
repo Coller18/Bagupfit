@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import AccountPage from './AccountPage.jsx'
+import AccountSettingsPage from './AccountSettingsPage.jsx'
 import BookingPage from './BookingPage.jsx'
 import MyBookingsPage from './MyBookingsPage.jsx'
 import PrivacyPolicyPage from './PrivacyPolicyPage.jsx'
@@ -13,6 +14,7 @@ const routePages = {
   '/works': WorksPage,
   '/booking': BookingPage,
   '/account': AccountPage,
+  '/account-settings': AccountSettingsPage,
   '/my-bookings': MyBookingsPage,
   '/privacy': PrivacyPolicyPage,
 }

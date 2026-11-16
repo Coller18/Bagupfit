@@ -1,6 +1,7 @@
 import hmac
 import logging
 import os
+import re
 import secrets
 from datetime import timedelta
 from django.contrib.auth import authenticate
@@ -221,12 +222,21 @@ class CustomerBookingCreateView(generics.CreateAPIView):
         full_name = str(self.request.user.user_metadata.get('full_name') or '').strip()
         if not full_name:
             raise ValidationError({'customer_name': 'Add your full name to your customer profile before booking.'})
+        customer_phone = re.sub(r'[\s()-]', '', str(self.request.user.user_metadata.get('phone') or ''))
+        if re.fullmatch(r'09\d{9}', customer_phone):
+            customer_phone = f'+63{customer_phone[1:]}'
+        elif re.fullmatch(r'639\d{9}', customer_phone):
+            customer_phone = f'+{customer_phone}'
+        elif not re.fullmatch(r'\+639\d{9}', customer_phone):
+            raise ValidationError({
+                'customer_phone': 'Add a valid Philippine mobile number (09XXXXXXXXX or +639XXXXXXXXX) to your profile before booking.'
+            })
         booking = serializer.save(
             availability=slot,
             customer_id=self.request.user.pk,
             customer_name=full_name,
             customer_email=self.request.user.email,
-            customer_phone=str(self.request.user.user_metadata.get('phone') or '').strip(),
+            customer_phone=customer_phone,
             status=Booking.Status.PENDING_REVIEW,
         )
         bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', '').strip().lstrip('@')

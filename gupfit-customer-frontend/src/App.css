@@ -102,6 +102,12 @@ main { overflow: hidden; }
 .auth-tab { min-height: 34px; border: 0; border-radius: 6px; color: var(--muted); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
 .auth-tab-active { color: var(--green-dark); background: white; box-shadow: 0 1px 4px rgb(24 40 27 / 8%); }
 .customer-auth-form { display: flex; flex-direction: column; gap: 14px; }
+.social-auth-divider { display: flex; align-items: center; gap: 12px; margin: 19px 0 13px; color: #8b8b8b; font-size: 10px; }
+.social-auth-divider::before,.social-auth-divider::after { height: 1px; flex: 1; background: #333; content: ''; }
+.google-auth-button { width: 100%; min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 11px; border: 1px solid #454545; border-radius: 7px; color: #f4f4f4; background: #151515; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; transition: background 150ms ease, border-color 150ms ease; }
+.google-auth-button:hover:not(:disabled) { border-color: #737373; background: #202020; }
+.google-auth-button:disabled { opacity: .55; cursor: not-allowed; }
+.google-auth-button svg { width: 18px; height: 18px; flex: 0 0 auto; }
 .customer-auth-form label { display: flex; flex-direction: column; gap: 7px; color: #4d5850; font-size: 10px; font-weight: 750; }
 .customer-auth-form > .form-row { margin: 0; }
 .customer-auth-form .submit-button { margin-top: 2px; }
@@ -606,11 +612,25 @@ body,
 .booking-history-toolbar .eyebrow { margin-bottom: 6px; color: #999; }
 .booking-history-toolbar h2 { margin: 0; color: #f5f5f5; font-family: "Frigg Cafe", Georgia, serif; font-size: clamp(32px, 4vw, 45px); font-weight: 400; }
 .booking-history-actions { display: flex; align-items: center; gap: 12px; }
+.account-settings-content { width: min(760px, calc(100% - 64px)); min-height: 38vh; margin: 0 auto; padding: 4px 0 80px; }
+.account-settings-form { max-width: 620px; margin: 0 auto; }
+.account-settings-form .account-form-heading h2 { margin: 0; color: #f5f5f5; font-family: "Frigg Cafe", Georgia, serif; font-size: clamp(32px, 5vw, 42px); font-weight: 400; }
+.account-settings-form .account-form-heading > p:last-child { margin: 8px 0 0; color: #999; font-size: 11px; }
+.account-settings-signout { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 28px; padding-top: 19px; border-top: 1px solid #303030; }
+.account-settings-signout strong { color: #eee; font-size: 11px; }
+.account-settings-signout p { margin: 5px 0 0; color: #888; font-size: 10px; }
 .booking-history-section { margin-top: 32px; }
 .booking-history-section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
 .booking-history-section-heading h3 { margin: 0; color: #f3f3f3; font-family: "Frigg Cafe", Georgia, serif; font-size: 30px; font-weight: 400; }
 .booking-history-section-heading > span { min-width: 23px; padding: 4px 7px; border: 1px solid #3c3c3c; border-radius: 20px; color: #ccc; font-size: 10px; text-align: center; }
 .booking-history-list { display: flex; flex-direction: column; border-top: 1px solid rgb(255 255 255 / 15%); }
+.booking-pagination { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 2px 2px; color: #999; font-size: 10px; }
+.booking-pagination > div { display: flex; align-items: center; gap: 10px; }
+.booking-pagination button { min-height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 10px; border: 1px solid #383838; border-radius: 6px; color: #eee; background: #111; font: inherit; font-weight: 650; cursor: pointer; }
+.booking-pagination button:hover:not(:disabled) { border-color: #777; background: #1b1b1b; }
+.booking-pagination button:disabled { color: #555; cursor: default; }
+.booking-pagination strong { min-width: 48px; color: #eee; font-size: 10px; text-align: center; }
+.booking-pagination strong span { color: #888; font-weight: 500; }
 .booking-history-card { min-height: 92px; display: grid; grid-template-columns: minmax(180px, 0.8fr) minmax(180px, 1fr) auto; align-items: center; gap: 25px; padding: 16px 18px; border-bottom: 1px solid rgb(255 255 255 / 13%); background: rgb(10 10 10 / 32%); }
 .booking-history-date,.booking-history-details { display: flex; flex-direction: column; gap: 6px; }
 .booking-history-date span { color: #bbb; font-size: 12px; }
@@ -623,6 +643,7 @@ body,
 
 @media (max-width: 760px) {
   .booking-history-content { width: calc(100% - 36px); }
+  .account-settings-content { width: calc(100% - 36px); }
   .booking-history-card { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 15px; }
   .booking-history-details { grid-column: 1; }
   .booking-history-card .booking-status { grid-column: 2; grid-row: 1 / span 2; }
@@ -633,6 +654,10 @@ body,
   .booking-history-content { padding-bottom: 60px; }
   .booking-history-card { padding: 14px 11px; }
   .booking-history-empty { padding: 22px 18px; }
+  .account-settings-signout { align-items: flex-start; flex-direction: column; }
+  .booking-pagination { align-items: flex-start; flex-direction: column; gap: 9px; }
+  .booking-pagination > div { width: 100%; justify-content: space-between; }
+  .booking-pagination button { min-height: 38px; }
 }
 
 .site-footer-expanded { display: block; min-height: 0; padding: 0 max(32px, calc((100% - 1440px) / 2)); border-top: 1px solid #292929; background: #070707; }
@@ -723,6 +748,7 @@ body,
 .account-form-standalone .customer-auth-form > label:not(.privacy-consent) { color: #c5c5c5; font-size: 10px; }
 .account-form-standalone .customer-auth-form input:not([type="checkbox"]) { height: 47px; padding: 0 12px; border: 1px solid #373737; border-radius: 6px; background: #090909; }
 .account-form-standalone .customer-auth-form input:not([type="checkbox"]):focus { border-color: #aaa; box-shadow: 0 0 0 2px rgb(255 255 255 / 8%); }
+.account-form-standalone .customer-auth-form label small { color: #888; font-size: 9px; font-weight: 450; line-height: 1.45; }
 .account-form-standalone .submit-button { min-height: 48px; margin-top: 4px; border-radius: 6px; font-size: 12px; }
 .account-form-standalone .privacy-note { margin-top: 14px; color: #888; font-size: 9px; }
 .account-auth-links { width: 100%; display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; }
