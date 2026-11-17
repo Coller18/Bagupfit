@@ -94,12 +94,15 @@ export default function App() {
     if (!activeToken) return
     setPageError('')
     try {
-      const [barberData, availabilityData, bookingData] = await Promise.all([
+      const [userData, barberData, availabilityData, bookingData] = await Promise.all([
+        apiRequest('/api/auth/me/', { token: activeToken }),
         apiRequest('/api/admin/barbers/', { token: activeToken }),
         apiRequest('/api/admin/availability/', { token: activeToken }),
         apiRequest('/api/admin/bookings/', { token: activeToken }),
       ])
       const workData = await apiRequest('/api/admin/works/', { token: activeToken })
+      setUsername(userData.username)
+      sessionStorage.setItem(USER_KEY, userData.username)
       setBarbers(barberData)
       setAvailability(availabilityData)
       setBookings(bookingData)

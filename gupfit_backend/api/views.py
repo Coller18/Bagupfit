@@ -80,6 +80,22 @@ class SubAdminLogoutView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class CurrentAdminUserView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsSubAdminOrSuperuser]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            'id': user.pk,
+            'username': user.get_username(),
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'is_superuser': user.is_superuser,
+        })
+
+
 class BarberListView(generics.ListAPIView):
     queryset = Barber.objects.filter(is_active=True)
     serializer_class = BarberSerializer
