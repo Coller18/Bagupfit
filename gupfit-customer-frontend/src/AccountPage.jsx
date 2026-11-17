@@ -6,8 +6,7 @@ import './App.css'
 
 const requestedNext = new URLSearchParams(window.location.search).get('next')
 const nextPath = ['/booking', '/my-bookings', '/account-settings'].includes(requestedNext) ? requestedNext : '/booking'
-const SOCIAL_PROFILE_DRAFT_KEY = 'gupfit-social-profile-draft'
-const LEGACY_GOOGLE_PROFILE_DRAFT_KEY = 'gupfit-google-profile-draft'
+const GOOGLE_PROFILE_DRAFT_KEY = 'gupfit-google-profile-draft'
 const PRIVACY_POLICY_VERSION = '2026-11-17'
 
 function normalizePhilippinePhone(value) {
@@ -76,10 +75,9 @@ export default function AccountPage() {
 
     let draft = null
     try {
-      draft = JSON.parse(sessionStorage.getItem(SOCIAL_PROFILE_DRAFT_KEY) || sessionStorage.getItem(LEGACY_GOOGLE_PROFILE_DRAFT_KEY) || 'null')
+      draft = JSON.parse(sessionStorage.getItem(GOOGLE_PROFILE_DRAFT_KEY) || 'null')
     } catch {
-      sessionStorage.removeItem(SOCIAL_PROFILE_DRAFT_KEY)
-      sessionStorage.removeItem(LEGACY_GOOGLE_PROFILE_DRAFT_KEY)
+      sessionStorage.removeItem(GOOGLE_PROFILE_DRAFT_KEY)
     }
     const metadata = session.user.user_metadata || {}
     const fullName = String(draft?.full_name || metadata.full_name || '').trim()
@@ -102,8 +100,7 @@ export default function AccountPage() {
       setProfileRequired(true)
       return
     }
-    sessionStorage.removeItem(SOCIAL_PROFILE_DRAFT_KEY)
-    sessionStorage.removeItem(LEGACY_GOOGLE_PROFILE_DRAFT_KEY)
+    sessionStorage.removeItem(GOOGLE_PROFILE_DRAFT_KEY)
     window.location.replace(nextPath)
   }, [authLoading, session, passwordRecovery])
 
@@ -206,7 +203,7 @@ export default function AccountPage() {
     }
   }
 
-  async function signInWithProvider(provider) {
+  async function signInWithGoogle() {
     setAuthError('')
     setAuthMessage('')
     if (!supabase) {
@@ -239,19 +236,19 @@ export default function AccountPage() {
 
     setSubmitting(true)
     try {
-      if (profileDraft) sessionStorage.setItem(SOCIAL_PROFILE_DRAFT_KEY, JSON.stringify(profileDraft))
+      if (profileDraft) sessionStorage.setItem(GOOGLE_PROFILE_DRAFT_KEY, JSON.stringify(profileDraft))
       const redirectTo = new URL(`/account?mode=login&next=${encodeURIComponent(nextPath)}`, window.location.origin).toString()
       const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo, ...(provider === 'google' ? { queryParams: { prompt: 'select_account' } } : {}) },
+        provider: 'google',
+        options: { redirectTo, queryParams: { prompt: 'select_account' } },
       })
       if (error) {
-        sessionStorage.removeItem(SOCIAL_PROFILE_DRAFT_KEY)
+        sessionStorage.removeItem(GOOGLE_PROFILE_DRAFT_KEY)
         setAuthError(error.message)
       }
     } catch (error) {
-      sessionStorage.removeItem(SOCIAL_PROFILE_DRAFT_KEY)
-      setAuthError(error.message || `Could not start ${provider} sign-in. Please try again.`)
+      sessionStorage.removeItem(GOOGLE_PROFILE_DRAFT_KEY)
+      setAuthError(error.message || 'Could not start Google sign-in. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -289,8 +286,7 @@ export default function AccountPage() {
       if (error) throw error
       const { data, error: refreshError } = await supabase.auth.refreshSession()
       if (refreshError) throw refreshError
-      sessionStorage.removeItem(SOCIAL_PROFILE_DRAFT_KEY)
-      sessionStorage.removeItem(LEGACY_GOOGLE_PROFILE_DRAFT_KEY)
+      sessionStorage.removeItem(GOOGLE_PROFILE_DRAFT_KEY)
       setSession(data.session)
       window.location.replace(nextPath)
     } catch (error) {
@@ -385,13 +381,9 @@ export default function AccountPage() {
             </form>
             {authMode === 'signup' && <p className="privacy-note">Email sign-up sends a verification link. Google accounts are verified during sign-in.</p>}
             <div className="social-auth-divider"><span>or continue with</span></div>
-            <button className="social-auth-button google-auth-button" disabled={submitting} onClick={() => signInWithProvider('google')} type="button">
+            <button className="google-auth-button" disabled={submitting} onClick={signInWithGoogle} type="button">
               <svg aria-hidden="true" viewBox="0 0 48 48" focusable="false"><path fill="#4285F4" d="M43.6 24.5c0-1.5-.1-3-.4-4.4H24v8.3h11a9.5 9.5 0 0 1-4.1 6.2v5.2h6.7c3.9-3.6 6-8.9 6-15.3Z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.7-5.2c-1.8 1.2-4.1 2-6.8 2-5.2 0-9.6-3.5-11.2-8.1H5.9v5.4C9.3 39.7 16 44 24 44Z"/><path fill="#FBBC05" d="M12.8 27.8a12 12 0 0 1 0-7.6v-5.4H5.9a20 20 0 0 0 0 18.4l6.9-5.4Z"/><path fill="#EA4335" d="M24 12.1c3 0 5.7 1 7.8 3.1l5.9-5.9C34.1 6 29.5 4 24 4 16 4 9.3 8.3 5.9 14.8l6.9 5.4c1.6-4.6 6-8.1 11.2-8.1Z"/></svg>
               <span>{submitting ? 'Connecting...' : 'Continue with Google'}</span>
-            </button>
-            <button className="social-auth-button facebook-auth-button" disabled={submitting} onClick={() => signInWithProvider('facebook')} type="button">
-              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M13.5 21v-8.2h2.8l.4-3.2h-3.2v-2c0-.9.3-1.6 1.6-1.6H17V3.1c-.4-.1-1.4-.1-2.6-.1-2.6 0-4.3 1.6-4.3 4.5v2.1H7.3v3.2h2.8V21h3.4Z"/></svg>
-              <span>{submitting ? 'Connecting...' : 'Continue with Facebook'}</span>
             </button>
           </>}
           </div>
