@@ -203,7 +203,7 @@ export default function AccountPage() {
     }
   }
 
-  async function signInWithSocial(provider) {
+  async function signInWithGoogle() {
     setAuthError('')
     setAuthMessage('')
     if (!supabase) {
@@ -238,16 +238,17 @@ export default function AccountPage() {
     try {
       if (profileDraft) sessionStorage.setItem(GOOGLE_PROFILE_DRAFT_KEY, JSON.stringify(profileDraft))
       const redirectTo = new URL(`/account?mode=login&next=${encodeURIComponent(nextPath)}`, window.location.origin).toString()
-      const options = { redirectTo }
-      if (provider === 'google') options.queryParams = { prompt: 'select_account' }
-      const { error } = await supabase.auth.signInWithOAuth({ provider, options })
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, queryParams: { prompt: 'select_account' } },
+      })
       if (error) {
         sessionStorage.removeItem(GOOGLE_PROFILE_DRAFT_KEY)
         setAuthError(error.message)
       }
     } catch (error) {
       sessionStorage.removeItem(GOOGLE_PROFILE_DRAFT_KEY)
-      setAuthError(error.message || `Could not start ${provider} sign-in. Please try again.`)
+      setAuthError(error.message || 'Could not start Google sign-in. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -378,15 +379,11 @@ export default function AccountPage() {
               {authMode === 'signup' && <label className="privacy-consent"><input checked={privacyAccepted} onChange={(event) => setPrivacyAccepted(event.target.checked)} required type="checkbox" /><span>I have read the <a href="/privacy" rel="noreferrer" target="_blank">Privacy Policy</a> and consent to the use of my information for account and booking services.</span></label>}
               <button className="primary-link submit-button" disabled={submitting} type="submit">{submitting ? 'Please wait...' : authMode === 'signup' ? 'Create account' : 'Sign in'} <span aria-hidden="true">&#8594;</span></button>
             </form>
-            {authMode === 'signup' && <p className="privacy-note">Email sign-up sends a verification link. Social accounts are verified during sign-in.</p>}
+            {authMode === 'signup' && <p className="privacy-note">Email sign-up sends a verification link. Google accounts are verified during sign-in.</p>}
             <div className="social-auth-divider"><span>or continue with</span></div>
-            <button className="google-auth-button" disabled={submitting} onClick={() => signInWithSocial('google')} type="button">
+            <button className="google-auth-button" disabled={submitting} onClick={signInWithGoogle} type="button">
               <svg aria-hidden="true" viewBox="0 0 48 48" focusable="false"><path fill="#4285F4" d="M43.6 24.5c0-1.5-.1-3-.4-4.4H24v8.3h11a9.5 9.5 0 0 1-4.1 6.2v5.2h6.7c3.9-3.6 6-8.9 6-15.3Z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.7-5.2c-1.8 1.2-4.1 2-6.8 2-5.2 0-9.6-3.5-11.2-8.1H5.9v5.4C9.3 39.7 16 44 24 44Z"/><path fill="#FBBC05" d="M12.8 27.8a12 12 0 0 1 0-7.6v-5.4H5.9a20 20 0 0 0 0 18.4l6.9-5.4Z"/><path fill="#EA4335" d="M24 12.1c3 0 5.7 1 7.8 3.1l5.9-5.9C34.1 6 29.5 4 24 4 16 4 9.3 8.3 5.9 14.8l6.9 5.4c1.6-4.6 6-8.1 11.2-8.1Z"/></svg>
               <span>{submitting ? 'Connecting...' : 'Continue with Google'}</span>
-            </button>
-            <button className="google-auth-button facebook-auth-button" disabled={submitting} onClick={() => signInWithSocial('facebook')} type="button">
-              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M24 12a12 12 0 1 0-13.875 11.85v-8.38H7.078V12h3.047V9.356c0-3.007 1.791-4.669 4.533-4.669 1.313 0 2.686.235 2.686.235v2.953h-1.513c-1.491 0-1.956.925-1.956 1.874V12h3.328l-.532 3.47h-2.796v8.38A12.002 12.002 0 0 0 24 12Z"/></svg>
-              <span>{submitting ? 'Connecting...' : 'Continue with Facebook'}</span>
             </button>
           </>}
           </div>

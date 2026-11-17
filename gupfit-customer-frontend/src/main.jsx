@@ -47,7 +47,7 @@ document.querySelector('meta[property="og:title"]')?.setAttribute('content', pag
 document.querySelector('meta[property="og:description"]')?.setAttribute('content', pageMetadata.description)
 document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', pageMetadata.title)
 document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', pageMetadata.description)
-const canonicalUrl = `https://gupfit.vercel.app${currentPath === '/' ? '/' : currentPath}`
+const canonicalUrl = `https://gupfit.hair${currentPath === '/' ? '/' : currentPath}`
 document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonicalUrl)
 let canonical = document.querySelector('link[rel="canonical"]')
 if (!canonical) {
