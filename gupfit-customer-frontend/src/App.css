@@ -108,6 +108,8 @@ main { overflow: hidden; }
 .google-auth-button:hover:not(:disabled) { border-color: #737373; background: #202020; }
 .google-auth-button:disabled { opacity: .55; cursor: not-allowed; }
 .google-auth-button svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.facebook-auth-button { margin-top: 9px; }
+.facebook-auth-button svg { color: #1877f2; }
 .customer-auth-form label { display: flex; flex-direction: column; gap: 7px; color: #4d5850; font-size: 10px; font-weight: 750; }
 .customer-auth-form > .form-row { margin: 0; }
 .customer-auth-form .submit-button { margin-top: 2px; }

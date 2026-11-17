@@ -15,8 +15,8 @@ export default function PrivacyPolicyPage() {
         <a className="back-link" href="/account?next=%2Fbooking">&#8592; Return to your account</a>
         <p className="eyebrow">GUPFIT CUSTOMER INFORMATION</p>
         <h1>Privacy Policy</h1>
-        <p className="privacy-policy-updated">Effective date: November 13, 2026 · Version 1.0</p>
-        <p className="privacy-policy-intro">This policy explains how Gupfit collects and uses information when you create an account, book an appointment, or send us a payment receipt through our booking website.</p>
+        <p className="privacy-policy-updated">Effective date: November 17, 2026 · Version 1.1</p>
+        <p className="privacy-policy-intro">This policy explains how Gupfit collects and uses information when you create or access an account, book an appointment, or send us a payment receipt through our booking website.</p>
 
         <section>
           <h2>Who is responsible for your information?</h2>
@@ -26,32 +26,32 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2>What information we collect</h2>
           <ul>
-            <li><strong>Account details:</strong> your full name, phone number, email address, and account authentication information. Supabase Authentication handles your password; Gupfit does not receive your plain-text password.</li>
+            <li><strong>Account details:</strong> your full name, phone number, email address, and account authentication information. If you choose Facebook sign-in, we may also receive the name, email address (if available), and account identifier Facebook shares with Supabase for authentication. Supabase Authentication handles your password; Gupfit does not receive your plain-text password.</li>
             <li><strong>Appointment details:</strong> the barber and time you select, booking status, and information needed to manage your appointment.</li>
             <li><strong>Payment receipt:</strong> the image or document you upload so Gupfit staff can review your payment. It may show transaction details or account information included by your payment app. Please avoid including unrelated personal information.</li>
-            <li><strong>Service and sign-in information:</strong> the session data needed to keep you signed in. Our service providers may also generate technical logs required to operate and protect their services.</li>
+            <li><strong>Service and sign-in information:</strong> the session data needed to keep you signed in and, when you use social sign-in, information exchanged with the provider to authenticate your account. Our service providers may also generate technical logs required to operate and protect their services.</li>
           </ul>
         </section>
 
         <section>
           <h2>How we use it</h2>
-          <p>We use this information to create and secure your account, show appointment availability, create and manage bookings, contact you about your booking, review payment receipts, respond to requests, and meet applicable legal or accounting obligations. We process information based on your consent and as needed to provide the account and booking services you request or meet legal obligations. We do not use booking details to create advertising profiles or make decisions with significant effects solely by automated means.</p>
+          <p>We use this information to create and secure your account, authenticate you when you sign in, show appointment availability, create and manage bookings, contact you about your booking, review payment receipts, respond to requests, and meet applicable legal or accounting obligations. Facebook sign-in is optional; if you choose it, Facebook processes your sign-in under its own privacy terms and sends authentication information to Supabase so we can create or access your Gupfit account. We process information based on your consent and as needed to provide the account and booking services you request or meet legal obligations. We do not use booking details to create advertising profiles or make decisions with significant effects solely by automated means.</p>
         </section>
 
         <section>
           <h2>Who may receive your information</h2>
-          <p>Gupfit staff who manage appointments and payments can access information needed for their work. Supabase provides account authentication and database infrastructure; the project is configured in Sydney, Australia (ap-southeast-2). The Gupfit booking backend processes appointment requests and stores uploaded receipts in private storage; its location depends on where that backend is deployed. When Telegram notifications are enabled, Telegram receives booking details and the uploaded payment receipt through Gupfit's bot so staff can review new bookings. Customers who choose to connect Telegram will also have their Telegram chat identifier stored so Gupfit can send them booking status updates; the bot receives their Telegram start message to link the account. Telegram processes this information under its own privacy terms. Service providers may process limited operational information in other locations to provide their services. The homepage embeds a Google Map; when it loads, your browser connects to Google and <a href="https://policies.google.com/privacy/embedded" rel="noreferrer" target="_blank">Google's Privacy Policy</a> applies. Payment transactions are handled by the payment service you use; its own privacy policy also applies. We may disclose information where required by law or to protect legal rights and safety.</p>
+          <p>Gupfit staff who manage appointments and payments can access information needed for their work. Supabase provides account authentication and database infrastructure; the project is configured in Sydney, Australia (ap-southeast-2). If you choose Facebook sign-in, Meta processes your login and shares the information described above through Supabase; <a href="https://www.facebook.com/privacy/policy/" rel="noreferrer" target="_blank">Meta's Privacy Policy</a> applies to its processing. The Gupfit booking backend processes appointment requests and stores uploaded receipts in private storage; its location depends on where that backend is deployed. When Telegram notifications are enabled, Telegram receives booking details and the uploaded payment receipt through Gupfit's bot so staff can review new bookings. Customers who choose to connect Telegram will also have their Telegram chat identifier stored so Gupfit can send them booking status updates; the bot receives their Telegram start message to link the account. Telegram processes this information under its own privacy terms. Service providers may process limited operational information in other locations to provide their services. The homepage embeds a Google Map; when it loads, your browser connects to Google and <a href="https://policies.google.com/privacy/embedded" rel="noreferrer" target="_blank">Google's Privacy Policy</a> applies. Payment transactions are handled by the payment service you use; its own privacy policy also applies. We may disclose information where required by law or to protect legal rights and safety.</p>
         </section>
 
         <section>
           <h2>Storage, security, and retention</h2>
           <p>We use access controls intended to limit account and receipt access to authorized people and services. No online service can guarantee absolute security. We keep information only for as long as needed to provide the service, manage bookings and payment records, resolve disputes, and meet legal obligations. We then delete or de-identify it when reasonably possible, unless the law requires further retention.</p>
-          <p>Your browser stores the sign-in session so you can use your account. You can sign out from the booking page or your bookings page to end that session on the device.</p>
+          <p>Your browser stores the sign-in session so you can use your account. You can sign out from your profile page to end that session on the device.</p>
         </section>
 
         <section>
           <h2>Your choices and privacy rights</h2>
-          <p>You may ask to access or correct your information, request deletion or blocking, object to certain processing, withdraw consent where processing relies on consent, or request a copy of information where applicable. Some information may need to be retained to complete a booking, resolve a payment issue, or meet a legal obligation. To make a request, email <a href="mailto:collerrefuerzo@gmail.com">collerrefuerzo@gmail.com</a>. You may also contact the Philippine National Privacy Commission through its <a href="https://privacy.gov.ph/data-subject-rights/" rel="noreferrer" target="_blank">data subject rights page</a>.</p>
+          <p>You may ask to access or correct your information, request deletion or blocking, object to certain processing, withdraw consent where processing relies on consent, or request a copy of information where applicable. Some information may need to be retained to complete a booking, resolve a payment issue, or meet a legal obligation. To request deletion, follow our <a href="/data-deletion">data deletion instructions</a> or email <a href="mailto:collerrefuerzo@gmail.com">collerrefuerzo@gmail.com</a>. You may also contact the Philippine National Privacy Commission through its <a href="https://privacy.gov.ph/data-subject-rights/" rel="noreferrer" target="_blank">data subject rights page</a>.</p>
         </section>
 
         <section>

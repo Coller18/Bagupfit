@@ -5,6 +5,7 @@ import App from './App.jsx'
 import AccountPage from './AccountPage.jsx'
 import AccountSettingsPage from './AccountSettingsPage.jsx'
 import BookingPage from './BookingPage.jsx'
+import DataDeletionPage from './DataDeletionPage.jsx'
 import MyBookingsPage from './MyBookingsPage.jsx'
 import PrivacyPolicyPage from './PrivacyPolicyPage.jsx'
 import WorksPage from './WorksPage.jsx'
@@ -17,10 +18,21 @@ const routePages = {
   '/account-settings': AccountSettingsPage,
   '/my-bookings': MyBookingsPage,
   '/privacy': PrivacyPolicyPage,
+  '/data-deletion': DataDeletionPage,
 }
 const Page = routePages[currentPath] || App
 
-const pageMetadata = currentPath === '/works'
+const pageMetadata = currentPath === '/data-deletion'
+  ? {
+      title: 'Data Deletion | Gupfit Barbershop',
+      description: 'Learn how to request deletion of your Gupfit account and personal information.',
+    }
+  : currentPath === '/privacy'
+    ? {
+        title: 'Privacy Policy | Gupfit Barbershop',
+        description: 'Read how Gupfit collects, uses, and protects customer information.',
+      }
+    : currentPath === '/works'
   ? {
       title: 'Haircut Gallery | Gupfit Barbershop',
       description: 'Browse the complete haircut portfolio from Gupfit Barbershop.',
