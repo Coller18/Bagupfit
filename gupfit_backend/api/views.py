@@ -261,6 +261,39 @@ class CustomerBookingCreateView(generics.CreateAPIView):
         )
 
 
+class CustomerTelegramLinkView(APIView):
+    authentication_classes = [SupabaseAuthAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', '').strip().lstrip('@')
+        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
+        connection = CustomerTelegramConnection.objects.filter(customer_id=request.user.pk).first()
+        return Response({
+            'available': bool(bot_username and bot_token),
+            'connected': bool(connection and connection.telegram_chat_id),
+        })
+
+    def post(self, request):
+        bot_username = os.environ.get('TELEGRAM_BOT_USERNAME', '').strip().lstrip('@')
+        bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
+        if not bot_username or not bot_token:
+            return Response({'detail': 'Telegram linking is not configured yet.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        connection, _ = CustomerTelegramConnection.objects.get_or_create(customer_id=request.user.pk)
+        if connection.telegram_chat_id:
+            return Response({'connected': True, 'telegram_link_url': None})
+
+        token = secrets.token_urlsafe(24)
+        connection.link_token_hash = hash_link_token(token)
+        connection.link_token_expires_at = timezone.now() + timedelta(days=7)
+        connection.save(update_fields=['link_token_hash', 'link_token_expires_at'])
+        return Response({
+            'connected': False,
+            'telegram_link_url': f'https://t.me/{bot_username}?start={token}',
+        })
+
+
 class TelegramBookingWebhookView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
@@ -335,7 +368,7 @@ class TelegramBookingWebhookView(APIView):
         if len(command_parts) < 2:
             send_customer_message(
                 chat_id,
-                'To get booking updates, submit a booking on the Gupfit website and tap its "Connect Telegram for booking updates" link.',
+                'To get booking updates, open your Gupfit profile and tap "Connect Telegram".',
             )
             return Response({'ok': True})
 
@@ -361,7 +394,7 @@ class TelegramBookingWebhookView(APIView):
                 ])
 
         if not connection:
-            send_customer_message(chat_id, 'That Gupfit link is invalid or expired. Please get a fresh Telegram link from your booking page.')
+            send_customer_message(chat_id, 'That Gupfit link is invalid or expired. Please get a fresh Telegram link from your Gupfit profile.')
             return Response({'ok': True})
 
         send_customer_link_message(chat_id)

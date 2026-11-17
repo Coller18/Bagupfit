@@ -12,6 +12,7 @@ from .views import (
     BarberPhotoView,
     CustomerBookingCreateView,
     CustomerBookingHistoryView,
+    CustomerTelegramLinkView,
     PublicAvailabilityListView,
     PublicFeaturedHaircutWorkListView,
     PublicHaircutWorkListView,
@@ -39,4 +40,5 @@ urlpatterns = [
     path('bookings/', CustomerBookingCreateView.as_view(), name='customer-booking-create'),
     path('telegram/webhook/', TelegramBookingWebhookView.as_view(), name='telegram-booking-webhook'),
     path('my/bookings/', CustomerBookingHistoryView.as_view(), name='customer-booking-history'),
+    path('my/telegram-link/', CustomerTelegramLinkView.as_view(), name='customer-telegram-link'),
 ]

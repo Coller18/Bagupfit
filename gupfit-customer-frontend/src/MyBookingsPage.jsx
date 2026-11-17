@@ -15,7 +15,7 @@ const localDateKey = (date) => {
   return `${year}-${month}-${day}`
 }
 
-export default function MyBookingsPage() {
+export default function MyBookingsPage({ embedded = false }) {
   const [session, setSession] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [bookings, setBookings] = useState([])
@@ -93,19 +93,20 @@ export default function MyBookingsPage() {
     </article>
   }
 
+  const Wrapper = embedded ? 'section' : 'main'
   return (
-    <main className="booking-page my-bookings-page">
-      <header className="site-header">
+    <Wrapper className={`booking-page my-bookings-page${embedded ? ' my-bookings-embedded' : ''}`}>
+      {!embedded && <header className="site-header">
         <a className="brand" href="/" aria-label="Gupfit home"><img className="site-logo" src={brandLogo} alt="Gupfit" /></a>
         <CustomerNav session={session} showLogin active="bookings" />
-      </header>
+      </header>}
 
-      <section className="booking-page-heading">
+      {!embedded && <section className="booking-page-heading">
         <a className="back-link" href="/booking">&#8592; Back to booking</a>
         <p className="eyebrow">YOUR GUPFIT ACCOUNT</p>
         <h1>My bookings.</h1>
         <p>View your upcoming appointments and booking history.</p>
-      </section>
+      </section>}
 
       <section className="booking-history-content" aria-labelledby="booking-history-title">
         {authLoading ? <p className="info-panel">Checking your account...</p> : !session ? (
@@ -125,8 +126,8 @@ export default function MyBookingsPage() {
         </>}
       </section>
 
-      <SiteFooter />
-    </main>
+      {!embedded && <SiteFooter />}
+    </Wrapper>
   )
 }
 

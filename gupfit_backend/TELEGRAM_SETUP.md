@@ -45,6 +45,6 @@ This command runs on your Windows computer, not in Render. Telegram should respo
 
 New booking alerts include the receipt and booking details. Approve marks the booking confirmed; Reject marks it cancelled. The buttons are removed after a decision. The webhook accepts owner actions only from the configured private Telegram chat and checks the webhook secret. Existing Telegram messages do not gain buttons retroactively.
 
-After submitting a booking, a client can choose **Connect Telegram for booking updates** and tap **Start** in the bot. The link is one-time and expires after seven days. Once connected, that Gupfit account receives a Telegram message when a booking is confirmed or cancelled. Clients who do not connect Telegram can still see their booking status on the website.
+Customers can connect Telegram from their Gupfit profile, before or after making a booking. They tap **Connect Telegram**, then tap **Start** in the bot. The link is one-time and expires after seven days. Once connected, that Gupfit account receives a Telegram message when a booking is confirmed or cancelled. Clients who do not connect Telegram can still see their booking status on the website.
 
 Telegram receives the uploaded receipt and booking details, so enable this only if that matches your privacy practices. A failed Telegram notification does not undo or reject the booking.

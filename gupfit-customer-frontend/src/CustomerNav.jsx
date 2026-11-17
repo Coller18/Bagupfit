@@ -3,9 +3,8 @@ import { createPortal } from 'react-dom'
 
 const links = [
   { label: 'Works', href: '/works', icon: 'works', key: 'works' },
-  { label: 'My bookings', href: '/my-bookings', icon: 'bookings', key: 'bookings' },
+  { label: 'Add', href: '/booking', icon: 'appointment', key: 'appointment' },
   { label: 'Profile', href: '/account-settings', icon: 'profile', key: 'profile' },
-  { label: 'Create appointment', href: '/booking', icon: 'appointment', key: 'appointment', auth: true },
 ]
 
 function NavIcon({ name }) {
@@ -26,8 +25,11 @@ export default function CustomerNav({ session, active, showLogin = false }) {
     return () => query.removeEventListener('change', update)
   }, [])
 
-  const visibleLinks = links.filter((link) => !link.auth || session)
-  if (!session && showLogin) visibleLinks.push({ label: 'Create appointment', href: '/account?mode=login&next=%2Fbooking', icon: 'appointment', key: 'appointment' })
+  const visibleLinks = links.map((link) => (
+    !session && link.key === 'appointment'
+      ? { ...link, href: '/account?mode=login&next=%2Fbooking' }
+      : link
+  ))
 
   const nav = (
     <nav className="site-nav" aria-label="Main navigation">
